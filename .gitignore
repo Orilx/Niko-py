@@ -109,7 +109,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+.env.dev
 .venv
 env/
 venv/
@@ -144,3 +144,4 @@ dmypy.json
 /services/course_time_table.py
 /data/configs/
 /.vscode/
+/.idea/

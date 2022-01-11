@@ -1,9 +1,9 @@
 import re
 import json
 import nonebot
-from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent, Message, MessageSegment
+from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageSegment
 from nonebot import on_message
-from nonebot.typing import T_State
+
 
 repeater = on_message(block=False, priority=10)
 
@@ -12,7 +12,7 @@ repeated_message = dict()
 
 
 @repeater.handle()
-async def repeater_(bot: Bot, event: GroupMessageEvent, state: T_State):
+async def repeater_(event: GroupMessageEvent):
 
     if event.is_tome():
         return
