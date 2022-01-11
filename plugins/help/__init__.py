@@ -1,11 +1,11 @@
 from nonebot import on_command
-from nonebot.typing import T_State
-from nonebot.adapters.onebot.v11 import Bot, MessageEvent, MessageSegment
 
-help = on_command('帮助', priority=5)
+from nonebot.adapters.onebot.v11 import MessageSegment
+
+help = on_command('帮助', priority=5, block=True)
 
 @help.handle()
-async def help_(bot: Bot, event: MessageEvent, state: T_State):
+async def help_():
     msg ='''Niko还在学习新的功能~
 目前支持的功能：
 * /喜报

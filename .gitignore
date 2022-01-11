@@ -109,7 +109,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+.env.dev
 .venv
 env/
 venv/
@@ -140,7 +140,10 @@ dmypy.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 /plugins/course/
-/services/connect.py
 /services/course_time_table.py
-/data/configs/
 /.vscode/
+/.idea/
+Dockerfile
+docker-compose.yml
+/data/wb_sub_list.yaml
+/cache/
