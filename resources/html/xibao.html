@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>喜报</title>
+    <script>
+        function getQueryString(key) {
+            var reg = new RegExp("(^|&)" + key + "=([^&]*)(&|$)");
+            //如果地址栏中出现中文则进行编码    
+            var r = encodeURI(window.location.search).substr(1).match(reg);
+            if (r != null) {
+                //将中文编码的字符重新变成中文
+                return decodeURI(unescape(r[2]));
+            }
+            return "喜报";
+        }
+        var text = getQueryString("text");
+    </script>
+    <style>
+        body {
+            background: url('../images/xibao/xibao.png') top left;
+            background-size: 100%;
+        }
+
+        @font-face {
+            font-family: 'sarasa';
+            src: url('../fonts/sarasa-mono-sc-bold.ttf');
+        }
+
+        .stroke {
+            color: rgb(198, 44, 18);
+            text-align: center;
+            line-height: 100vh;
+            font-family: sarasa;
+            font-size: 8vw;
+        }
+
+        .border {
+            -webkit-text-stroke:
+                2px rgb(255, 214, 141);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stroke border" id="text">
+    </div>
+    <script type="text/javascript">
+        document.getElementById("text").innerHTML = text;
+    </script>
+</body>
+
+</html>
