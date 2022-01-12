@@ -2,7 +2,7 @@ from nonebot import on_command
 
 from nonebot.adapters.onebot.v11 import MessageEvent, MessageSegment
 
-help = on_command('帮助', priority=5)
+help = on_command('帮助', priority=5, block=True)
 
 @help.handle()
 async def help_(event: MessageEvent):

@@ -3,7 +3,7 @@ from nonebot.params import CommandArg
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageSegment
 from .data_source import search_song, get_song_info
 
-wyy = on_command("点歌", priority=5)
+wyy = on_command("点歌", priority=5, block=True)
 
 
 @wyy.handle()

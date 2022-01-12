@@ -4,7 +4,7 @@ from nonebot.adapters.onebot.v11 import Message, MessageEvent, MessageSegment
 from utils.utils import get_json
 
 
-bing_img = on_command("bing", priority=5)
+bing_img = on_command("bing", priority=5, block=True)
 
 
 @bing_img.handle()
