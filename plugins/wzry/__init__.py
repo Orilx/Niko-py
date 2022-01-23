@@ -33,6 +33,6 @@ async def wzry_(event: GroupMessageEvent):
         is_mvp = '     MVP' if data['wzryRecordInfo']['scoreImg'] else ''
         record_info = f"{data['wzryRecordInfo']['winNum']}胜 / {data['wzryRecordInfo']['loseNum']}负"
 
-        msg = f'{role_name}\n本局战绩：\n使用英雄：{hero_id}\n{partition}\n本局评分：{score}{is_mvp}\n累计战绩：{record_info}'
+        msg = f'{role_name}\n本局战绩：\n使用英雄：{hero_id}\n{partition}\n本局评分：{score}{is_mvp}'
 
         await wzry.finish(msg)

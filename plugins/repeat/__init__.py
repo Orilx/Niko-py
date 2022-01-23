@@ -20,7 +20,10 @@ async def repeater_(event: GroupMessageEvent):
     group_id = event.group_id
     msg = event.get_message()
     raw_msg = event.raw_message
-
+    
+    if raw_msg[0] == '/':
+        await repeater.finish()
+    
     if group_id not in msg_cache.keys():
         msg_cache[group_id] = raw_msg
         repeated_message[group_id] = None

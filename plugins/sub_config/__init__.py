@@ -1,18 +1,20 @@
-from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent
 from nonebot import on_command, require
-import utils.config_util as u_conf
+from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
+from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent
+import utils.config_util as u_conf
 
 add_subcribe = on_command('订阅', priority=5, permission=SUPERUSER)
-rm_subcribe = on_command('退订', priority=5,permission=SUPERUSER)
-search = on_command('查询', priority=5)
+rm_subcribe = on_command('退订', priority=5, permission=SUPERUSER)
+search = on_command('订阅查询', priority=5)
 
-key_words = {'每日课表' : u_conf.course_sub_config,
-             '龙王提醒' : u_conf.honor_sub_config}
+key_words = {'每日课表': u_conf.course_sub_config,
+             '龙王提醒': u_conf.honor_sub_config}
+
 
 @add_subcribe.handle()
-async def add_subcribe_(event: GroupMessageEvent):
-    param = event.get_plaintext()
+async def add_subcribe_(event: GroupMessageEvent, par: Message = CommandArg()):
+    param = par.extract_plain_text()
     sub = None
     if not param:
         await add_subcribe.finish('你想订阅啥？')
@@ -27,9 +29,10 @@ async def add_subcribe_(event: GroupMessageEvent):
     else:
         await add_subcribe.finish(f'本群已经订阅过{param}啦~')
 
+
 @rm_subcribe.handle()
-async def rm_subcribe_(event: GroupMessageEvent):
-    param = event.get_plaintext()
+async def rm_subcribe_(event: GroupMessageEvent, par: Message = CommandArg()):
+    param = par.extract_plain_text()
     sub = None
     if not param:
         await add_subcribe.finish('你想退订啥？')
@@ -42,6 +45,7 @@ async def rm_subcribe_(event: GroupMessageEvent):
     if sub.rm_group(event.group_id):
         await rm_subcribe.finish('退订成功！')
     await rm_subcribe.finish(f'本群还没订阅{param}呢~')
+
 
 @search.handle()
 async def search_(event: GroupMessageEvent):
