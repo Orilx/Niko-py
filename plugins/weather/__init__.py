@@ -12,6 +12,8 @@ today_wearther = on_command('天气', priority=5, block=True)
 async def current_weather_(par: Message = CommandArg()):
     if par:
         city = par.extract_plain_text()
+        if city == '火星':
+            await current_wearther.finish('https://mars.nasa.gov/msl/weather/')
         w = Weather(city)
         await w.load_data()
         msg = ''
@@ -31,6 +33,8 @@ async def current_weather_(par: Message = CommandArg()):
 async def today_weather_(par: Message = CommandArg()):
     if par:
         city = par.extract_plain_text()
+        if city == '火星':
+            await current_wearther.finish('https://mars.nasa.gov/msl/weather/')
         w = Weather(city)
         await w.load_data()
         msg = ''
