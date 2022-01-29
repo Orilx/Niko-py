@@ -1,21 +1,20 @@
+import asyncio
 from nonebot import get_driver
 from httpx import AsyncClient, Response
-import asyncio
 
 api_key = get_driver().config.qweather_apikey
+
 
 class Weather:
     def __url__(self):
 
         self.url_weather_api = "https://devapi.qweather.com/v7/weather/"
-        self.url_geoapi = "https://geoapi.qweather.com/v2/city/"
+        self.url_geoapi = "https://geoapi.qweather.com/v2/city/lookup"
 
     def __init__(self, city_name: str):
         self.city_name = city_name
         self.apikey = api_key
         self.__url__()
-        self.now = None
-        self.daily = None
 
     async def load_data(self):
         self.city_id = await self._get_city_id()
@@ -28,14 +27,16 @@ class Weather:
             res = await client.get(url, params=params)
         return res
 
-    async def _get_city_id(self, api_type: str = "lookup"):
+    async def _get_city_id(self):
         res = await self._get_data(
-            url=self.url_geoapi + api_type,
-            params={"location": self.city_name, "key": self.apikey},
+            url=self.url_geoapi,
+            params={"range": "cn", "location": self.city_name, "key": self.apikey},
         )
-
         res = res.json()
-
+        if res["code"] == "200":
+            return res["location"][0]["id"]
+        else:
+            return -1
 
     @property
     async def _now(self) -> dict:
@@ -52,4 +53,3 @@ class Weather:
             params={"location": self.city_id, "key": self.apikey},
         )
         return res.json()
-
