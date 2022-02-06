@@ -5,6 +5,12 @@ from httpx import AsyncClient, Response
 api_key = get_driver().config.qweather_apikey
 
 
+async def _get_data(url: str, params: dict) -> Response:
+    async with AsyncClient() as client:
+        res = await client.get(url, params=params)
+    return res
+
+
 class Weather:
     def __url__(self):
 
@@ -12,6 +18,9 @@ class Weather:
         self.url_geoapi = "https://geoapi.qweather.com/v2/city/lookup"
 
     def __init__(self, city_name: str):
+        self.daily = None
+        self.now = None
+        self.city_id = None
         self.city_name = city_name
         self.apikey = api_key
         self.__url__()
@@ -22,15 +31,10 @@ class Weather:
             self._now, self._daily
         )
 
-    async def _get_data(self, url: str, params: dict) -> Response:
-        async with AsyncClient() as client:
-            res = await client.get(url, params=params)
-        return res
-
     async def _get_city_id(self):
-        res = await self._get_data(
+        res = await _get_data(
             url=self.url_geoapi,
-            params={"range": "cn", "location": self.city_name, "key": self.apikey},
+            params={"range": "cn", "location": self.city_name, "key": self.apikey}
         )
         res = res.json()
         if res["code"] == "200":
@@ -40,7 +44,7 @@ class Weather:
 
     @property
     async def _now(self) -> dict:
-        res = await self._get_data(
+        res = await _get_data(
             url=self.url_weather_api + "now",
             params={"location": self.city_id, "key": self.apikey},
         )
@@ -48,7 +52,7 @@ class Weather:
 
     @property
     async def _daily(self) -> dict:
-        res = await self._get_data(
+        res = await _get_data(
             url=self.url_weather_api + "3d",
             params={"location": self.city_id, "key": self.apikey},
         )
