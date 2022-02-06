@@ -3,7 +3,7 @@ from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent
 from plugins import services
-from .data_source import get_mblog
+from .data_source import get_data
 
 add_subscribe = on_command('订阅', priority=5, permission=SUPERUSER)
 rm_subscribe = on_command('退订', priority=5, permission=SUPERUSER)
@@ -67,7 +67,7 @@ rm_wb_subscribe = on_command('微博退订', priority=5, permission=SUPERUSER)
 async def _(par: Message = CommandArg()):
     if par:
         uid = par.extract_plain_text()
-        mblog = get_mblog(uid)
+        mblog = await get_data(uid)
         msg = f'微博账号：{mblog["screen_name"]}\n{mblog["text"]}\n{mblog["url"]}\n时间：{mblog["created_at"]}'
         await add_wb_subscribe.finish(msg)
     else:

@@ -36,10 +36,5 @@ async def get_data(uid):
                 "images": card["mblog"].get("pics", []),
                 "created_at": format_time(created_at)
             }
-    return data
-
-
-def get_mblog(uid):
-    data = get_data(uid)
     x = max([i for i in data])
     return data[x]
