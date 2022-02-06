@@ -1,11 +1,13 @@
-from nonebot import on_notice, on_command
-from nonebot.permission import SUPERUSER
-from nonebot.adapters.onebot.v11 import  GroupIncreaseNoticeEvent, GroupDecreaseNoticeEvent, HonorNotifyEvent, MessageEvent, MessageSegment
+from nonebot import on_notice
+from nonebot.adapters.onebot.v11 import GroupIncreaseNoticeEvent, HonorNotifyEvent, \
+    MessageSegment
 from utils.message_builder import at
-from utils.config_util import honor_sub_config
+from plugins.services import honor_sub_config
+
 member_increase = on_notice(priority=1, block=True)
 # member_decrease = on_notice(priority=1)
 honor = on_notice(priority=1, block=True)
+
 
 # test = on_command('testing', block=False, permission=SUPERUSER)
 
@@ -37,18 +39,12 @@ async def member_increase_(event: GroupIncreaseNoticeEvent):
 async def honor_(event: HonorNotifyEvent):
     if event.group_id not in honor_sub_config.get_groups():
         await honor.finish()
-    dic = {'performer':'群聊之火', 'emotion':'快乐源泉'}
+    dic = {'performer': '群聊之火', 'emotion': '快乐源泉'}
     if event.honor_type != 'talkative':
-        await honor.finish(f'debug:\nuser_id:{event.user_id}\nhonor_type:{event.honor_type}({dic.get(event.honor_type)})')
+        await honor.finish(
+            f'debug:\nuser_id:{event.user_id}\nhonor_type:{event.honor_type}({dic.get(event.honor_type)})')
     if event.is_tome():
         await honor.finish('啊嘞？龙王竟是我自己！')
     msg = '恭喜' + MessageSegment.at(event.user_id) + '成为今日龙王~'
     await honor.finish(msg)
-
-
-# @test.handle()
-# async def test_(event: MessageEvent):
-#     msg = 't'+ MessageSegment.at(2590633525) + 'testing'
-#     await test.send(msg)
-#     await test.finish('恭喜' + MessageSegment.at(event.user_id) + '成为今日龙王~')
 
