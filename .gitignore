@@ -140,8 +140,6 @@ dmypy.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 /plugins/course/
-/services/connect.py
 /services/course_time_table.py
-/data/configs/
 /.vscode/
 /.idea/
