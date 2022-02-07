@@ -143,3 +143,5 @@ dmypy.json
 /services/course_time_table.py
 /.vscode/
 /.idea/
+Dockerfile
+docker-compose.yml
