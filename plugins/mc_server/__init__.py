@@ -8,7 +8,7 @@ server_url = 'https://mc.orilx.top/api/status/new_world'
 @status.handle()
 async def status_():
     
-    js = get_json(server_url)  
+    js = await get_json(server_url)
     msg = ''
     if js['status']:
         if "lastDate" in js:

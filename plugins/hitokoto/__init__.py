@@ -17,6 +17,6 @@ async def hitokoto_(par: Message = CommandArg()):
         else:
             await hitokoto.finish('参数有误~')
     
-    js = get_json(f'https://v1.hitokoto.cn/{param}')  
+    js = await get_json(f'https://v1.hitokoto.cn/{param}')
 
     await hitokoto.finish(f"『{js.get('hitokoto')}』\n—— {js.get('from')}")
