@@ -1,9 +1,9 @@
 from nonebot import on_command
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
-from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent
+from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent, MessageSegment
 from plugins import services
-from .data_source import get_data
+from plugins.wb_subscribe.data_source import get_data
 
 add_subscribe = on_command('订阅', priority=5, permission=SUPERUSER)
 rm_subscribe = on_command('退订', priority=5, permission=SUPERUSER)
@@ -16,7 +16,7 @@ key_words = {'每日课表': services.course_sub_config,
 @add_subscribe.handle()
 async def _(event: GroupMessageEvent, par: Message = CommandArg()):
     param = par.extract_plain_text()
-    sub = services.SubConfig('default')
+    sub = None
     if not param:
         await add_subscribe.finish('你想订阅啥？')
     else:
@@ -58,26 +58,3 @@ async def _(event: GroupMessageEvent):
             msg += f'\n◇ {k}'
     await search.finish(msg)
 
-search_wb = on_command('查询微博', priority=5, permission=SUPERUSER)
-add_wb_subscribe = on_command('微博订阅', priority=5, permission=SUPERUSER)
-rm_wb_subscribe = on_command('微博退订', priority=5, permission=SUPERUSER)
-
-
-@search_wb.handle()
-async def _(par: Message = CommandArg()):
-    if par:
-        uid = par.extract_plain_text()
-        mblog = await get_data(uid)
-        msg = f'微博账号：{mblog["screen_name"]}\n{mblog["text"]}\n{mblog["url"]}\n时间：{mblog["created_at"]}'
-        await add_wb_subscribe.finish(msg)
-    else:
-        await add_wb_subscribe.finish('请输入uid~')
-
-# @add_wb_subscribe.handle()
-# async def current_weather_(par: Message = CommandArg()):
-#     if par:
-#         uid = par.extract_plain_text()
-#         mblog = get_mblog(uid)
-#         await add_wb_subscribe.finish(msg)
-#     else:
-#         await add_wb_subscribe.finish('请输入要订阅微博用户的uid~')
