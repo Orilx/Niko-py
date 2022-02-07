@@ -145,3 +145,5 @@ dmypy.json
 /.idea/
 Dockerfile
 docker-compose.yml
+/data/wb_sub_list.yaml
+/cache/
