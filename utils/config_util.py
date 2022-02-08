@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from nonebot import get_driver
+from nonebot import get_driver, logger
 from ruamel import yaml
 
 super_group = get_driver().config.super_group
@@ -48,7 +48,6 @@ class SubConfig(Config):
     """
     TODO 待完善
     """
-
     def __init__(self, name: str):
         config_files = file_manager.get_paths()
         if name in config_files:
@@ -56,10 +55,11 @@ class SubConfig(Config):
         else:
             file_manager.add_path(name + '_config')
             path = Path(f'data/config/{name}_config.yaml')
-        super().__init__(path, {'group_id': super_group})
+        super().__init__(path, {'group_id': [int(i) for i in super_group]})
 
     def get_groups(self) -> list:
-        return self.source_data['group_id']
+        logger.warning(f'!!!{self.source_data["group_id"]}')
+        return self.source_data["group_id"]
 
     async def add_group(self, group_id: int) -> bool:
         if group_id in self.get_groups():

@@ -1,9 +1,8 @@
 from nonebot import on_command
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
-from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent, MessageSegment
-from plugins import services
-from plugins.wb_subscribe.data_source import get_data
+from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent
+from plugins.sub_config import services
 
 add_subscribe = on_command('订阅', priority=5, permission=SUPERUSER)
 rm_subscribe = on_command('退订', priority=5, permission=SUPERUSER)
@@ -34,7 +33,7 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
 @rm_subscribe.handle()
 async def _(event: GroupMessageEvent, par: Message = CommandArg()):
     param = par.extract_plain_text()
-    sub = services.SubConfig('default')
+    sub = None
     if not param:
         await add_subscribe.finish('你想退订啥？')
     else:

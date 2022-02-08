@@ -2,7 +2,7 @@ from nonebot import on_notice
 from nonebot.adapters.onebot.v11 import GroupIncreaseNoticeEvent, HonorNotifyEvent, \
     MessageSegment
 from utils.message_builder import at
-from plugins.services import honor_sub_config
+from plugins.sub_config.services import honor_sub_config
 
 member_increase = on_notice(priority=1, block=True)
 # member_decrease = on_notice(priority=1)
