@@ -17,9 +17,9 @@ ls_wb_subscribe = on_command('微博订阅列表', priority=5)
 watch = require("nonebot_plugin_apscheduler").scheduler
 
 
-@watch.scheduled_job("cron", hour='22-23,0-7', minute='*/10', jitter=10)
-@watch.scheduled_job("cron", hour='8-21', minute='*/2', jitter=10)
-# @watch.scheduled_job("interval", seconds=30)
+# @watch.scheduled_job("corn", hour='22-23,0-7', minute='*/10', jitter=10)
+# @watch.scheduled_job("corn", hour='8-21', minute='*/2', jitter=10)
+@watch.scheduled_job("interval", seconds=30)
 async def watch_post():
     # logger.info('开始检查微博更新...')
     for k, v in wb.source_data.items():
