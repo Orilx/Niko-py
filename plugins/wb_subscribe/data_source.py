@@ -63,7 +63,9 @@ async def get_data(uid):
                 "created_at": format_time(created_at)
             }
     # 找到最新一条微博（？
-    x = max([i for i in data])
+    x = max([i for i in data], default=0)
+    if not x:
+        return {"bid": 0}
     return data[x]
 
 
@@ -82,9 +84,6 @@ class WbSubConfig(Config):
             }
         })
 
-    # def get_groups(self, uid: str) -> list:
-    #     return self.source_data.get(uid)
-
     def save(self):
         super().save_file(self.source_data)
 
@@ -95,22 +94,22 @@ class WbSubConfig(Config):
         self.source_data[container]["last"] = bid
         self.save()
 
-    async def add_container(self, uid: str, group: int):
+    async def add_container(self, uid: str, group: int, bid: int):
         screen_name = await get_info(uid)
         self.source_data[uid] = {
             "screen_name": screen_name,
-            "last": 0,
+            "last": bid,
             "group_ids": [group]
         }
         self.save()
 
-    async def add_subscribe(self, uid: str, group_id: int):
+    async def add_subscribe(self, uid: str, group_id: int, bid: int):
         """
         添加订阅
         TODO 待重构
         """
         if not self.source_data.get(uid):
-            await self.add_container(uid, group_id)
+            await self.add_container(uid, group_id, bid)
             return self.source_data[uid]["screen_name"]
 
         id_list = self.source_data.get(uid)["group_ids"]
@@ -123,18 +122,33 @@ class WbSubConfig(Config):
     async def rm_subscribe(self, uid: str, group_id: int):
         """
         移除订阅
-        TODO
         """
-        pass
+        self.source_data[uid]["group_ids"].remove(group_id)
+        self.save()
 
-    def group_sub_list(self, group_id: int) -> list:
+    def get_container_list(self, group_id: int) -> dict:
         """
-        获取该群组订阅微博列表
+        获取微博账号的container_id
+        根据文件中顺序生成container_list
         """
-        sub_list = []
+        container_list = {}
+        num = 0
         for k, v in self.source_data.items():
             if group_id in v["group_ids"]:
-                sub_list.append(v.get("screen_name"))
+                container_list[str(num)] = k
+                num += 1
+        return container_list
+
+    def group_sub_list(self, group_id: int) -> dict:
+        """
+        获取该群组订阅微博名称列表
+        """
+        sub_list = {}
+        num = 0
+        for k, v in self.source_data.items():
+            if group_id in v["group_ids"]:
+                sub_list[str(num)] = v.get("screen_name")
+                num += 1
         return sub_list
 
     def get_sub_list(self, uid: str) -> list:
