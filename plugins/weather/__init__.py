@@ -16,7 +16,6 @@ async def current_weather_(par: Message = CommandArg()):
             await current_weather.finish('https://mars.nasa.gov/msl/weather/')
         w = Weather(city)
         await w.load_data()
-        msg = ''
         if w.city_id == -1:
             msg = '神奇的地名'
         elif w.now["code"] == '200':
@@ -42,7 +41,7 @@ async def today_weather_(par: Message = CommandArg()):
             msg = '神奇的地名'
         elif w.daily["code"] == '200':
             data = w.daily['daily'][0]
-            msg = f'{city}  日间天气：\n{data["textDay"]}，{data["tempMin"]}~{data["tempMax"]}℃\n{data["windDirDay"]}，{data["windSpeedDay"]}级'
+            msg = f'{city}  日间天气：\n{data["textDay"]}，{data["tempMin"]}~{data["tempMax"]}℃'
         else:
             msg = f'出错了！({w.daily["code"]})'
         await current_weather.finish(msg)
