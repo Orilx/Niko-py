@@ -1,8 +1,9 @@
 import time
+import traceback
 from pathlib import Path
 
 from bs4 import BeautifulSoup
-from nonebot import get_driver
+from nonebot import get_driver, logger
 from utils.config_util import Config
 from utils.utils import get_json
 
@@ -29,13 +30,18 @@ async def get_data(uid):
     """
     获取最新一条微博
     """
+    first_page = {}
     params = {
         "type": "uid",
         "value": uid,
         "containerid": "107603" + uid,
         "page": 1,
     }
-    first_page = await get_json('https://m.weibo.cn/api/container/getIndex', params=params)
+    try:
+        first_page = await get_json('https://m.weibo.cn/api/container/getIndex', params=params)
+    except:
+        logger.warning(f'获取 {uid} 微博失败')
+        logger.warning(traceback.format_exc())
 
     data = {}
     for card in first_page["data"]["cards"]:
