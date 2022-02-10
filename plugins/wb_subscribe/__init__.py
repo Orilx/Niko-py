@@ -5,7 +5,7 @@ import nonebot
 from nonebot import on_command, require, logger
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
-from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent, MessageSegment
+from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent, MessageSegment, exception
 from plugins.wb_subscribe.data_source import get_data
 from .data_source import wb_sub_config as wb
 
@@ -38,12 +38,16 @@ async def watch_post():
             wb.modify_bid(k, bid)
             msg = format_mblog(data_t)
             for group in v.get("group_ids"):
-                await asyncio.sleep(5)
-                await nonebot.get_bot().call_api('send_group_msg', **{
-                    'message': msg,
-                    'group_id': group
-                })
-                logger.success(f'向{group}发送：{v.get("screen_name")}')
+                try:
+                    await asyncio.sleep(5)
+                    await nonebot.get_bot().call_api('send_group_msg', **{
+                        'message': msg,
+                        'group_id': group
+                    })
+                except exception.NetworkError as ne:
+                    logger.warning(f'向{group}发送：{v.get("screen_name")}失败,{repr(ne)}')
+                else:
+                    logger.success(f'向{group}发送：{v.get("screen_name")}')
 
 
 def save_data(uid, dict_remote):
