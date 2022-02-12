@@ -8,8 +8,8 @@ add_subscribe = on_command('订阅', priority=5, permission=SUPERUSER)
 rm_subscribe = on_command('退订', priority=5, permission=SUPERUSER)
 search = on_command('订阅查询', priority=5)
 
-key_words = {'每日课表': services.course_sub_config,
-             '龙王提醒': services.honor_sub_config}
+key_words = {'每日课表': services.c_schedule_sub,
+             '龙王提醒': services.honor_sub}
 
 
 @add_subscribe.handle()

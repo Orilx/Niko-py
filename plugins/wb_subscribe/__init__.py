@@ -8,6 +8,7 @@ from nonebot.permission import SUPERUSER
 from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent, MessageSegment, exception
 from plugins.wb_subscribe.data_source import get_data
 from .data_source import wb_sub_config as wb
+from utils.utils import send_group_msg
 
 search_wb = on_command('查询微博', priority=5)
 add_wb_subscribe = on_command('微博订阅', priority=5, permission=SUPERUSER)
@@ -38,16 +39,11 @@ async def watch_post():
             wb.modify_bid(k, bid)
             msg = format_mblog(data_t)
             for group in v.get("group_ids"):
-                try:
-                    await asyncio.sleep(5)
-                    await nonebot.get_bot().call_api('send_group_msg', **{
-                        'message': msg,
-                        'group_id': group
-                    })
-                except exception.NetworkError as ne:
-                    logger.warning(f'向{group}发送：{v.get("screen_name")}失败,{repr(ne)}')
+                await asyncio.sleep(5)
+                if await send_group_msg(group, msg):
+                    logger.success(f'向 {group} 发送：{v.get("screen_name")}')
                 else:
-                    logger.success(f'向{group}发送：{v.get("screen_name")}')
+                    logger.warning(f'向 {group} 发送：{v.get("screen_name")}失败')
 
 
 def save_data(uid, dict_remote):

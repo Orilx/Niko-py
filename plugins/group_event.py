@@ -1,8 +1,7 @@
 from nonebot import on_notice
 from nonebot.adapters.onebot.v11 import GroupIncreaseNoticeEvent, HonorNotifyEvent, \
     MessageSegment
-from utils.message_builder import at
-from plugins.sub_config.services import honor_sub_config
+from plugins.sub_config.services import honor_sub
 
 member_increase = on_notice(priority=1, block=True)
 # member_decrease = on_notice(priority=1)
@@ -18,7 +17,7 @@ async def member_increase_(event: GroupIncreaseNoticeEvent):
         await member_increase.finish()
     await member_increase.send("\n欢迎大佬入群！群地位-1", at_sender=True)
     if event.operator_id:
-        await member_increase.send(f"由{at(event.operator_id)}邀请入群")
+        await member_increase.send(f"由{MessageSegment.at(event.operator_id)}邀请入群")
 
 
 # @member_decrease.handle()
@@ -37,7 +36,7 @@ async def member_increase_(event: GroupIncreaseNoticeEvent):
 
 @honor.handle()
 async def honor_(event: HonorNotifyEvent):
-    if event.group_id not in honor_sub_config.get_groups():
+    if event.group_id not in honor_sub.get_groups():
         await honor.finish()
     dic = {'performer': '群聊之火', 'emotion': '快乐源泉'}
     if event.honor_type != 'talkative':

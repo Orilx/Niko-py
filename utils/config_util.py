@@ -58,7 +58,7 @@ class SubConfig(Config):
         super().__init__(path, {'group_id': [int(i) for i in super_group]})
 
     def get_groups(self) -> list:
-        logger.warning(f'!!!{self.source_data["group_id"]}')
+        # logger.warning(f'!!!{self.source_data["group_id"]}')
         return self.source_data["group_id"]
 
     async def add_group(self, group_id: int) -> bool:
