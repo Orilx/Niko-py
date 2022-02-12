@@ -2,14 +2,11 @@ from nonebot import on_command
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent
-from plugins.sub_config import services
+from plugins.sub_config.services import key_words
 
 add_subscribe = on_command('订阅', priority=5, permission=SUPERUSER)
 rm_subscribe = on_command('退订', priority=5, permission=SUPERUSER)
 search = on_command('订阅查询', priority=5)
-
-key_words = {'每日课表': services.c_schedule_sub,
-             '龙王提醒': services.honor_sub}
 
 
 @add_subscribe.handle()
@@ -24,7 +21,7 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
         else:
             await add_subscribe.finish('咱目前不提供这项服务~')
 
-    if sub.add_group(event.group_id):
+    if await sub.add_group(event.group_id):
         await add_subscribe.finish('订阅成功！')
     else:
         await add_subscribe.finish(f'本群已经订阅过{param}啦~')
@@ -56,4 +53,3 @@ async def _(event: GroupMessageEvent):
         else:
             msg += f'\n◇ {k}'
     await search.finish(msg)
-
