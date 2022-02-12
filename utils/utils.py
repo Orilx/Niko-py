@@ -2,6 +2,22 @@ import datetime
 import time
 
 from httpx import AsyncClient
+import nonebot.adapters.onebot.v11.bot
+from nonebot import logger
+from nonebot.adapters.onebot.v11 import exception
+
+
+async def send_group_msg(group_id: int, msg):
+    try:
+        await nonebot.get_bot().call_api('send_group_msg', **{
+            'message': msg,
+            'group_id': group_id
+        })
+    except exception.NetworkError as ne:
+        logger.warning(f'向{group_id}发送：{str(msg)[:20]}失败,{repr(ne)}')
+        return False
+    else:
+        return True
 
 
 async def get_json(url: str, params=None):
