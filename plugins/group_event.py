@@ -36,6 +36,8 @@ async def member_increase_(event: GroupIncreaseNoticeEvent):
 
 @honor.handle()
 async def honor_(event: HonorNotifyEvent):
+    if not honor_sub.get_status():
+        await honor.finish()
     if event.group_id not in honor_sub.get_groups():
         await honor.finish()
     dic = {'performer': '群聊之火', 'emotion': '快乐源泉'}
