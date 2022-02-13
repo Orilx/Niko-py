@@ -139,11 +139,9 @@ dmypy.json
 .pytype/
 
 # End of https://www.toptal.com/developers/gitignore/api/python
-/plugins/course/
-/services/course_time_table.py
 /.vscode/
 /.idea/
 Dockerfile
 docker-compose.yml
-/data/wb_sub_list.yaml
 /cache/
+/data/wb_sub_list.yaml
