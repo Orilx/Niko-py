@@ -6,6 +6,7 @@ from plugins.sub_config.services import key_words
 
 add_subscribe = on_command('订阅', priority=5, permission=SUPERUSER)
 rm_subscribe = on_command('退订', priority=5, permission=SUPERUSER)
+s_manager = on_command('订阅管理', priority=5, permission=SUPERUSER)
 search = on_command('订阅查询', priority=5)
 
 
@@ -44,9 +45,33 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
     await rm_subscribe.finish(f'本群还没订阅{param}呢~')
 
 
+@s_manager.handle()
+async def _(event: GroupMessageEvent, par: Message = CommandArg()):
+    """
+    修改各订阅项目的状态
+    本命令影响各订阅项目配置文件中的`enable`字段
+    """
+    if not par:
+        msg = '服务状态 (▲表示已开启)：'
+    else:
+        param = par.extract_plain_text()
+        if key_words.get(param):
+            await key_words.get(param).ch_status()
+        else:
+            await s_manager.finish('咱目前不提供这项服务~')
+        msg = '修改成功！\n当前服务状态：'
+
+    for k, v in key_words.items():
+        if v.get_status():
+            msg += f'\n▲ {k}'
+        else:
+            msg += f'\n△ {k}'
+    await s_manager.finish(msg)
+
+
 @search.handle()
 async def _(event: GroupMessageEvent):
-    msg = '提供的服务：\n(◆表示已订阅)'
+    msg = '提供的服务 (◆表示已订阅)：'
     for k, v in key_words.items():
         if v.has_group(event.group_id):
             msg += f'\n◆ {k}'

@@ -48,6 +48,7 @@ class SubConfig(Config):
     """
     TODO 待完善
     """
+
     def __init__(self, name: str):
         config_files = file_manager.get_paths()
         if name in config_files:
@@ -55,7 +56,10 @@ class SubConfig(Config):
         else:
             file_manager.add_path(name + '_config')
             path = Path(f'data/config/{name}_config.yaml')
-        super().__init__(path, {'group_id': [int(i) for i in super_group]})
+        super().__init__(path, {
+            "group_id": [int(i) for i in super_group],
+            "enable": True
+        })
 
     def get_groups(self) -> list:
         return self.source_data["group_id"]
@@ -63,14 +67,22 @@ class SubConfig(Config):
     async def add_group(self, group_id: int) -> bool:
         if group_id in self.get_groups():
             return False
-        self.source_data['group_id'].append(group_id)
+        self.source_data["group_id"].append(group_id)
         return super().save_file(self.source_data)
 
     async def rm_group(self, group_id: int) -> bool:
         if group_id not in self.get_groups():
             return False
-        self.source_data['group_id'].remove(group_id)
+        self.source_data["group_id"].remove(group_id)
         return super().save_file(self.source_data)
+
+    def get_status(self) -> bool:
+        return self.source_data["enable"]
+
+    async def ch_status(self) -> bool:
+        self.source_data["enable"] = not self.get_status()
+        super().save_file(self.source_data)
+        return self.get_status()
 
     def has_group(self, group_id: int) -> bool:
         return group_id in self.get_groups()
