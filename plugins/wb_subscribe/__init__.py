@@ -1,14 +1,14 @@
 import asyncio
 import json
 
-import nonebot
 from nonebot import on_command, require, logger
+from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent, MessageSegment
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
-from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent, MessageSegment, exception
+
 from plugins.wb_subscribe.data_source import get_data
-from .data_source import wb_sub_config as wb
 from utils.utils import send_group_msg
+from .data_source import wb_sub_config as wb
 
 search_wb = on_command('查询微博', priority=5)
 add_wb_subscribe = on_command('微博订阅', priority=5, permission=SUPERUSER)
@@ -25,6 +25,10 @@ async def watch_post():
     # logger.info('开始检查微博更新...')
     for k, v in wb.source_data.items():
         data_t = await get_data(k)
+        # 打个补丁，以后有机会再改
+        if not data_t:
+            logger.warning("获取最新微博失败，请查看日志并检查网络情况")
+            return
         # 跳过订阅群组为空的微博记录
         if not v.get("group_ids"):
             # logger.warning(f'{v.get("screen_name")} skip here!!!!!')

@@ -1,5 +1,4 @@
 import time
-import traceback
 from pathlib import Path
 
 from bs4 import BeautifulSoup
@@ -39,10 +38,9 @@ async def get_data(uid):
     }
     try:
         first_page = await get_json('https://m.weibo.cn/api/container/getIndex', params=params)
-    except:
-        logger.warning(f'获取 {uid} 微博失败')
-        logger.warning(traceback.format_exc())
-
+    except Exception as e:
+        logger.warning(f'获取 {uid} 微博失败,{repr(e)}')
+        return None
     data = {}
     for card in first_page["data"]["cards"]:
         if card["card_type"] == 9:
@@ -91,7 +89,7 @@ class WbSubConfig(Config):
         })
 
     def save(self):
-        super().save_file(self.source_data)
+        super().save_file()
 
     def modify_bid(self, container: str, bid: int):
         """
