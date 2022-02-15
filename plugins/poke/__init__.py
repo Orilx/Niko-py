@@ -7,13 +7,13 @@ poke = on_notice(priority=1, rule=to_me(), block=False)
 
 @poke.handle()
 async def poke_(event: PokeNotifyEvent):
-    msg = '喵'
-    if random.randint(0, 10):
+    msg = '嗷'
+    if random.randint(0, 5):
         msg += '~'
-    elif random.randint(0, 5):
+    elif random.randint(0, 3):
         msg += '!'
     else:
         msg += '?'
-    if not random.randint(0, 10):
-        msg = '嗷！'
+    if not random.randint(0,5):
+        msg = '喵~'
     await poke.finish(msg)
