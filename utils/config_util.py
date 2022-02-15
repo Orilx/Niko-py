@@ -15,9 +15,9 @@ class Config:
                 f.write(yaml.dump(data, default_flow_style=False))
         self.source_data = yaml.load(path.read_bytes(), Loader=yaml.Loader)
 
-    def save_file(self, data):
+    def save_file(self):
         with open(self.path, "w", encoding="utf-8") as f:
-            f.write(yaml.dump(data, default_flow_style=False, allow_unicode=True,
+            f.write(yaml.dump(self.source_data, default_flow_style=False, allow_unicode=True,
                               Dumper=yaml.RoundTripDumper))
         return True
 
@@ -29,12 +29,11 @@ class ConfigFileManager(Config):
 
     def __init__(self):
         path = Path('data/config/config_files.yaml')
-        self.path_dict = dict()
-        super().__init__(path, self.path_dict)
+        super().__init__(path, {})
 
     def add_path(self, file_name: str):
-        self.path_dict[file_name] = f'{file_name}.yaml'
-        super().save_file(self.path_dict)
+        self.source_data[file_name] = f'{file_name}.yaml'
+        super().save_file()
 
     def get_paths(self):
         return self.source_data
@@ -68,20 +67,20 @@ class SubConfig(Config):
         if group_id in self.get_groups():
             return False
         self.source_data["group_id"].append(group_id)
-        return super().save_file(self.source_data)
+        return super().save_file()
 
     async def rm_group(self, group_id: int) -> bool:
         if group_id not in self.get_groups():
             return False
         self.source_data["group_id"].remove(group_id)
-        return super().save_file(self.source_data)
+        return super().save_file()
 
     def get_status(self) -> bool:
         return self.source_data["enable"]
 
     async def ch_status(self) -> bool:
         self.source_data["enable"] = not self.get_status()
-        super().save_file(self.source_data)
+        super().save_file()
         return self.get_status()
 
     def has_group(self, group_id: int) -> bool:
