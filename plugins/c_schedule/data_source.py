@@ -1,7 +1,8 @@
 from pathlib import Path
-
+from enum import Enum
 import requests
 import datetime
+from nonebot import logger
 
 from utils.config_util import Config
 from utils.utils import get_diff_days_2_now
@@ -19,7 +20,9 @@ class scheduleConfig(Config):
                 "account": "",
                 "password": ""
             },
-            "start_date": ""  # 开学日期
+            "start_date": "",  # 开学日期
+            "location": "黄岛",
+            "enable": False  # 是否启用(开学
         })
 
     def get_user_info(self):
@@ -28,11 +31,15 @@ class scheduleConfig(Config):
     def get_start_date(self):
         return self.source_data["start_date"]
 
+    def get_location(self):
+        return self.source_data["location"]
 
-s = scheduleConfig()
+    # TODO 修改成按开学日期判断
+    def is_begin(self):
+        return self.source_data["enable"]
 
-weekday = datetime.datetime.now().weekday() + 1
-week = get_diff_days_2_now(s.get_start_date()) // 7 + 1
+
+s_config = scheduleConfig()
 
 
 class SW(object):
@@ -75,41 +82,128 @@ class SW(object):
         return req.json()
 
 
+class StatusCode(Enum):
+    """状态码枚举类"""
+
+    OK = (0, '操作成功')
+    ERROR = (-1, '错误')
+    SERVER_ERR = (101, '强智系统登录失败')
+    SC_ERR = (102, '获取课表信息失败')
+    CONFLICT_ERR = (201, '存在冲突课程')
+
+    @property
+    def code(self):
+        """获取状态码"""
+        return self.value[0]
+
+    @property
+    def errmsg(self):
+        """获取状态码信息"""
+        return self.value[1]
+
+
 class scheduleManager(Config):
     """
-    TODO 待完善
-         添加手动刷新方法
-         实验或其他不排入课表的课程单独存入一个文件供查询，提供方法通过会话手动添加
+    课表管理类
+    TODO 添加课表检索
     """
 
     def __init__(self):
         path = Path('data/c_schedules/cs_main_data.yaml')
-        super().__init__(path, {0: {}, 1: {}})
+        super().__init__(path, {'main_table': {}, 'sub_table': {}})
 
-    def update_data(self):
-        Q = SW(**s.get_user_info())
-        for i in range(2):
-            data = Q.get_class_info(week + i)
-            if data == [None]:
-                break
+    def refresh_data(self, p: bool = False):
+        """
+        更新课表
+        参数p为True时获取下周课表
+        """
+        # 应该没啥用的异常处理
+        try:
+            Q = SW(**s_config.get_user_info())
+        except Exception as e:
+            logger.error(f"登录失败,{repr(e)}")
+            return StatusCode.SERVER_ERR
+        else:
+            # 当前日期距离开学几周
+            week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
+            try:
+                if not p:
+                    week += 1
+                data = Q.get_class_info(week)
+            except Exception as e:
+                logger.error(f"获取课表信息失败,{repr(e)}")
+                return StatusCode.SC_ERR
             for d in data:
                 # 过滤掉周六和周日的课程
                 if d.get("kcsj")[0] not in [str(i) for i in range(6)]:
                     continue
-                self.source_data[i][d.get("kcsj")] = {
+                self.source_data['main_table'][d.get("kcsj")] = {
                     "c_name": d.get("kcmc"),
                     "c_room": d.get("jsmc"),
                     "t_name": d.get("jsxm")
                 }
-        self.save_file(self.source_data)
-        return self.source_data
+        self.save_file()
+        return self.check_table()
+
+    def update_data(self, c_name, c_time: int, c_room, c_start_week: int, c_end_week: int):
+        """
+        手动添加数据到 sub_table, 若表中已有返回 False
+        课程名称，节次，教室，开始/结束周次
+        """
+        if c_time in self.source_data['sub_table']:
+            return StatusCode.CONFLICT_ERR
+
+        self.source_data['sub_table'][c_time] = {
+            "c_name": c_name,
+            "c_room": c_room,
+            "c_start_week": int(c_start_week),
+            "c_end_week": int(c_end_week)
+        }
+        self.save_file()
+        return self.refresh_data()
+
+    def check_table(self):
+        """
+        检查两个表中是否含有冲突项目
+        并去除 sub_table 中已结束的课程
+        """
+        # 当前日期距离开学几周
+        week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
+        # 计算今天是周几
+        weekday = datetime.datetime.now().weekday() + 1
+
+        if weekday in [5, 6]:
+            week += 1
+        main_table = self.source_data['main_table']
+        sub_table = self.source_data['sub_table']
+        s_code = StatusCode.OK
+
+        for k, v in sub_table.items():
+            # 删除已经结束的课程
+            if week not in range(v["c_end_week"] + 1):
+                del self.source_data['sub_table'][k]
+                continue
+            # 是否有冲突的课程
+            if k in main_table and week in range(v["c_start_week"], v["c_end_week"] + 1):
+                s_code = StatusCode.CONFLICT_ERR
+        return s_code
 
     def get_cs_today(self):
-        ans = {}
-        for k, v in self.source_data[0].items():
+        """
+        获取今天的课表
+        """
+        time_table = {'0102': '一', '0304': '二', '0506': '三', '0708': '四', '0910': '五'}
+        msg = ''
+
+        if not s_config.is_begin():
+            return '别急，还没开学呢~'
+
+        # 计算今天是周几
+        weekday = datetime.datetime.now().weekday() + 1
+        for k, v in self.source_data["main_table"].items():
             if k[0] == str(weekday):
-                ans[k] = (self.source_data[0][k])
-        return ans
+                msg += f'\n第{time_table.get(k[1:5])}节  {v.get("c_name")}, {v.get("c_room")}'
+        return msg
 
     def wipe_data(self):
         self.__init__()
