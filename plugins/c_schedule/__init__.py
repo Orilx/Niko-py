@@ -1,28 +1,57 @@
 import asyncio
+import datetime
+
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message
-from nonebot import on_command, require, logger
+from nonebot import on_command, require, logger, get_driver
 from nonebot.params import CommandArg
+from nonebot.permission import SUPERUSER
 
 from plugins.sub_config.services import c_schedule_sub
-from utils.utils import send_group_msg
-from .data_source import cs_manager
+from utils.utils import send_group_msg, get_diff_days_2_now
+from .data_source import cs_manager, s_config, StatusCode
+from ..weather import Weather
 
 course_sub = require("nonebot_plugin_apscheduler").scheduler
 
-time_table = {'0102': '一', '0304': '二', '0506': '三', '0708': '四', '0910': '五'}
-week_table = {'1': '一', '2': '二', '3': '三', '4': '四', '5': '五', '6': '六', '7': '日'}
+weekday = datetime.datetime.now().weekday() + 1
+week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
+week_table = {1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '日'}
+
+super_group = get_driver().config.super_group
+
+
+@course_sub.scheduled_job("cron", day_of_week='5', hour='12', minute='00', second='00')
+async def update():
+    if cs_manager.refresh_data(True):
+        logger.success("课表定时更新成功")
+    else:
+        logger.warning("课表定时更新失败")
+        await send_group_msg(super_group, "课表更新失败,请及时检查日志~")
 
 
 @course_sub.scheduled_job("cron", day_of_week='0-4', hour='07', minute='00', second='00')
 async def run():
     """
     每日定时发送课表
+    TODO 待完善
+         优化开关
     """
+    if not s_config.is_begin():
+        return
     if not c_schedule_sub.get_status():
         logger.info("每日课表提醒已被关闭")
         return
+    # 获取天气
+    city = s_config.get_location()
+    w = Weather(city)
+    await w.load_data()
+    data = w.daily['daily'][0]
+
+    msg = f'早上好！\n今天是周{week_table.get(weekday)}，本学期第 {week} 周\n============\n今日课表：' + cs_manager.get_cs_today()
+    # 附加天气
+    msg += f'\n============\n{city}  日间天气：\n{data["textDay"]}，{data["tempMin"]}~{data["tempMax"]}℃'
+
     group_id = c_schedule_sub.get_groups()
-    msg = '早上好！\n'
     for g_id in group_id:
         await asyncio.sleep(5)
         if await send_group_msg(g_id, msg):
@@ -32,31 +61,29 @@ async def run():
 
 
 cs_select = on_command("查课表", priority=5)
-cs_update = on_command("修改课表", priority=5)
-cs_refresh = on_command("更新课表", priority=5)
+cs_update = on_command("修改课表", priority=5, permission=SUPERUSER)
+cs_refresh = on_command("更新课表", priority=5, permission=SUPERUSER)
 
 
 @cs_select.handle()
-async def _(event: GroupMessageEvent, par: Message = CommandArg()):
-    msg = '今日课表'
-    if not par:
-        data = cs_manager.get_cs_today()
-        if not data:
-            msg = '今天没有课哦~'
-        else:
-            for k, v in data.items():
-                msg += f'\n第{time_table.get(k[1:5])}节  {v.get("c_name")}, {v.get("c_room")}'
-    else:
-        args = par.extract_plain_text()
+async def _(event: GroupMessageEvent):
+    msg = cs_manager.get_cs_today()
     await cs_select.finish(msg)
 
 
 @cs_update.handle()
 async def _(event: GroupMessageEvent, par: Message = CommandArg()):
-    pass
+    if not par:
+        await cs_update.finish("参数格式:\n课程名称 第几节 教室 开始周次 结束周次\n中间用空格分隔\nEG: 体育与健康 30506 操场 4 13")
+    else:
+        par_list = par.extract_plain_text().split(' ')
+        if len(par_list) != 5:
+            await cs_update.finish('参数有误！')
+        code = cs_manager.update_data(*par_list)
+        await cs_update.finish(code.errmsg)
 
 
 @cs_refresh.handle()
 async def _(event: GroupMessageEvent):
-    cs_manager.update_data()
-    await cs_refresh.finish("更新完成！")
+    code = cs_manager.refresh_data()
+    await cs_refresh.finish(code.errmsg)
