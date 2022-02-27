@@ -34,9 +34,9 @@ class scheduleConfig(Config):
     def get_location(self):
         return self.source_data["location"]
 
-    # TODO 修改成按开学日期判断
     def is_begin(self):
-        return self.source_data["enable"]
+        s_date = self.source_data["start_date"]
+        return get_diff_days_2_now(s_date) >= 0
 
 
 s_config = scheduleConfig()
@@ -133,6 +133,7 @@ class scheduleManager(Config):
             except Exception as e:
                 logger.error(f"获取课表信息失败,{repr(e)}")
                 return StatusCode.SC_ERR
+            self.wipe_data()
             for d in data:
                 # 过滤掉周六和周日的课程
                 if d.get("kcsj")[0] not in [str(i) for i in range(6)]:
@@ -162,6 +163,35 @@ class scheduleManager(Config):
         self.save_file()
         return self.refresh_data()
 
+    def del_data(self, no: int):
+        li = self.get_sub_table_list()
+        key = li[no-1]
+        self.source_data["sub_table"].pop(key)
+        self.save_file()
+        return StatusCode.OK
+
+    def get_sub_table_name_list(self):
+        """
+        返回sub_table中课程的详细信息
+        """
+        li = self.get_sub_table_list()
+        if not li:
+            return '列表为空~'
+        else:
+            sub_table = self.source_data['sub_table']
+            re_str = ''
+            i = 1
+            for item in li:
+                re_str += f'{i}. {sub_table[item]["c_name"]}, {item}' \
+                          f', {sub_table[item]["c_start_week"]}-{sub_table[item]["c_end_week"]}周\n'
+                i += 1
+            return re_str
+
+    def get_sub_table_list(self) -> list:
+        sub_table = self.source_data['sub_table']
+        re_list = [i for i in sub_table]
+        return re_list
+
     def check_table(self):
         """
         检查两个表中是否含有冲突项目
@@ -181,7 +211,7 @@ class scheduleManager(Config):
         for k, v in sub_table.items():
             # 删除已经结束的课程
             if week not in range(v["c_end_week"] + 1):
-                del self.source_data['sub_table'][k]
+                self.source_data['sub_table'].pop(k)
                 continue
             # 是否有冲突的课程
             if k in main_table and week in range(v["c_start_week"], v["c_end_week"] + 1):
@@ -206,7 +236,8 @@ class scheduleManager(Config):
         return msg
 
     def wipe_data(self):
-        self.__init__()
+        self.source_data["main_table"] = {}
+        self.save_file()
 
 
 cs_manager = scheduleManager()
