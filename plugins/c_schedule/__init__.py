@@ -26,10 +26,11 @@ async def update():
         logger.success("课表定时更新成功")
     else:
         logger.warning("课表定时更新失败")
-        await send_group_msg(super_group, "课表更新失败,请及时检查日志~")
+        for id in super_group:
+            await send_group_msg(id, "课表更新失败,请及时检查日志~")
 
 
-@course_sub.scheduled_job("cron", day_of_week='0-4', hour='07', minute='00', second='00')
+@course_sub.scheduled_job("cron", day_of_week='0-4', hour='07', minute='10', second='00')
 async def run():
     """
     每日定时发送课表
@@ -61,7 +62,8 @@ async def run():
 
 
 cs_select = on_command("查课表", priority=5)
-cs_update = on_command("修改课表", priority=5, permission=SUPERUSER)
+cs_update = on_command("添加课表", priority=5, permission=SUPERUSER)
+cs_delete = on_command("删除课表", priority=5, permission=SUPERUSER)
 cs_refresh = on_command("更新课表", priority=5, permission=SUPERUSER)
 
 
@@ -81,6 +83,23 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
             await cs_update.finish('参数有误！')
         code = cs_manager.update_data(*par_list)
         await cs_update.finish(code.errmsg)
+
+
+@cs_delete.handle()
+async def _(event: GroupMessageEvent, par: Message = CommandArg()):
+    if not par:
+        msg = cs_manager.get_sub_table_name_list()
+        await cs_delete.finish(msg)
+    else:
+        param = par.extract_plain_text()
+        li = cs_manager.get_sub_table_list()
+        if not param.isdigit():
+            await cs_delete.finish("参数有误~")
+        elif int(param) not in range(1, len(li)+1):
+            await cs_delete.finish("参数有误~")
+        else:
+            code = cs_manager.del_data(int(param))
+            await cs_delete.finish(code.errmsg)
 
 
 @cs_refresh.handle()
