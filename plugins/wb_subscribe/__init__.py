@@ -48,6 +48,7 @@ async def watch_post():
                     logger.success(f'向 {group} 发送：{v.get("screen_name")}')
                 else:
                     logger.warning(f'向 {group} 发送：{v.get("screen_name")}失败')
+        logger.success('发送完成')
 
 
 def save_data(uid, dict_remote):
