@@ -89,7 +89,7 @@ class StatusCode(Enum):
     ERROR = (-1, '错误')
     SERVER_ERR = (101, '强智系统登录失败')
     SC_ERR = (102, '获取课表信息失败')
-    CONFLICT_ERR = (201, '存在冲突课程')
+    CONFLICT_ERR = (201, '存在冲突课程，请检查')
 
     @property
     def code(self):
@@ -110,7 +110,7 @@ class scheduleManager(Config):
 
     def __init__(self):
         path = Path('data/c_schedules/cs_main_data.yaml')
-        super().__init__(path, {'main_table': {}, 'sub_table': {}})
+        super().__init__(path, {'main_table': {}, 'sub_table': {}, "black_list": []})
 
     def refresh_data(self, p: bool = False):
         """
@@ -133,6 +133,8 @@ class scheduleManager(Config):
             except Exception as e:
                 logger.error(f"获取课表信息失败,{repr(e)}")
                 return StatusCode.SC_ERR
+            # if data.get("state") != 1:
+            #     return StatusCode.SERVER_ERR
             self.wipe_data()
             for d in data:
                 # 过滤掉周六和周日的课程
@@ -206,17 +208,53 @@ class scheduleManager(Config):
             week += 1
         main_table = self.source_data['main_table']
         sub_table = self.source_data['sub_table']
+        black_list = self.get_black_list()
         s_code = StatusCode.OK
+
+        bak_main_table = {}
+        bak_sub_table = {}
+        # 删除在黑名单里的课程
+        for k, v in main_table.items():
+            if v.get("c_name") not in black_list:
+                bak_main_table[k] = v
+        self.source_data['main_table'] = bak_main_table
 
         for k, v in sub_table.items():
             # 删除已经结束的课程
-            if week not in range(v["c_end_week"] + 1):
-                self.source_data['sub_table'].pop(k)
+            # 删除在黑名单里的课程
+            if week in range(v["c_end_week"] + 1) and v.get("c_name") not in black_list:
+                bak_sub_table[k] = v
                 continue
             # 是否有冲突的课程
             if k in main_table and week in range(v["c_start_week"], v["c_end_week"] + 1):
                 s_code = StatusCode.CONFLICT_ERR
+        self.source_data['sub_table'] = bak_sub_table
+        self.save_file()
         return s_code
+
+    def add_black_list(self, name: str):
+        self.source_data["black_list"].append(name)
+        return self.check_table()
+
+    def rm_black_list(self, name: str):
+        self.source_data["black_list"].pop(name)
+        return self.check_table()
+
+    def get_black_list(self):
+        return self.source_data["black_list"]
+
+    def get_cd_list(self):
+        """
+        获取当前数据文件中所有的课程名
+        """
+        resp = []
+        main_table = self.source_data['main_table']
+        sub_table = self.source_data['sub_table']
+        for k, v in main_table.items():
+            resp.append(v.get("c_name"))
+        for k, v in sub_table.items():
+            resp.append(v.get("c_name"))
+        return list(set(resp))
 
     def get_cs_today(self):
         """
@@ -230,9 +268,37 @@ class scheduleManager(Config):
 
         # 计算今天是周几
         weekday = datetime.datetime.now().weekday() + 1
+        cs_li = {}
         for k, v in self.source_data["main_table"].items():
             if k[0] == str(weekday):
-                msg += f'\n第{time_table.get(k[1:5])}节  {v.get("c_name")}, {v.get("c_room")}'
+                cs_li[k] = v
+        for k, v in self.source_data["sub_table"].items():
+            if k[0] == str(weekday):
+                cs_li[k] = v
+
+        for k in sorted(cs_li):
+            msg += f'第{time_table.get(k[1:5])}节  {v.get("c_name")}, {v.get("c_room")}\n'
+        return msg
+
+    def get_cs_week(self):
+        """
+        获取本周的课表
+        """
+        week_table = {'1': '一', '2': '二', '3': '三', '4': '四', '5': '五', '6': '六', '7': '日'}
+        time_table = {'0102': '一', '0304': '二', '0506': '三', '0708': '四', '0910': '五'}
+        msg = ''
+
+        if not s_config.is_begin():
+            return '别急，还没开学呢~'
+
+        cs_li = {}
+        for k, v in self.source_data["main_table"].items():
+            cs_li[k] = v
+        for k, v in self.source_data["sub_table"].items():
+            cs_li[k] = v
+
+        for i in sorted(cs_li):
+            msg += f'周{week_table.get(i[0])} 第{time_table.get(i[1:5])}节  {cs_li[i]["c_name"]}, {cs_li[i]["c_room"]}\n'
         return msg
 
     def wipe_data(self):
