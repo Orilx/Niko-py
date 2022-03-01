@@ -48,7 +48,7 @@ async def run():
     await w.load_data()
     data = w.daily['daily'][0]
 
-    msg = f'早上好！\n今天是周{week_table.get(weekday)}，本学期第 {week} 周\n============\n今日课表：' + cs_manager.get_cs_today()
+    msg = f'\n早上好！\n今天是周{week_table.get(weekday)}，本学期第 {week} 周\n============\n今日课表：' + cs_manager.get_cs_today()
     # 附加天气
     msg += f'\n============\n{city}  日间天气：\n{data["textDay"]}，{data["tempMin"]}~{data["tempMax"]}℃'
 
@@ -62,15 +62,23 @@ async def run():
 
 
 cs_select = on_command("查课表", priority=5)
+cs_select_week = on_command("本周课表", priority=5)
 cs_update = on_command("添加课表", priority=5, permission=SUPERUSER)
 cs_delete = on_command("删除课表", priority=5, permission=SUPERUSER)
 cs_refresh = on_command("更新课表", priority=5, permission=SUPERUSER)
+cs_black_list = on_command("课表黑名单", priority=5, permission=SUPERUSER)
 
 
 @cs_select.handle()
 async def _(event: GroupMessageEvent):
     msg = cs_manager.get_cs_today()
     await cs_select.finish(msg)
+
+
+@cs_select_week.handle()
+async def _(event: GroupMessageEvent):
+    msg = cs_manager.get_cs_week()
+    await cs_select_week.finish(msg)
 
 
 @cs_update.handle()
@@ -95,7 +103,7 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
         li = cs_manager.get_sub_table_list()
         if not param.isdigit():
             await cs_delete.finish("参数有误~")
-        elif int(param) not in range(1, len(li)+1):
+        elif int(param) not in range(1, len(li) + 1):
             await cs_delete.finish("参数有误~")
         else:
             code = cs_manager.del_data(int(param))
@@ -106,3 +114,16 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
 async def _(event: GroupMessageEvent):
     code = cs_manager.refresh_data()
     await cs_refresh.finish(code.errmsg)
+
+
+@cs_black_list.handle()
+async def _(event: GroupMessageEvent, par: Message = CommandArg()):
+    if not par:
+        msg = cs_manager.get_black_list()
+        if not msg:
+            msg = '黑名单为空~'
+        await cs_black_list.finish(msg)
+    else:
+        param = par.extract_plain_text()
+        code = cs_manager.add_black_list(param)
+        await cs_black_list.finish(code.errmsg)
