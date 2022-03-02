@@ -6,10 +6,12 @@ from nonebot.adapters.onebot.v11 import (GroupMessageEvent, Message,
                                          PokeNotifyEvent)
 from nonebot.rule import to_me
 from utils.utils import send_group_msg
-from ..sub_config.services import good_night
 from ..weather import Weather
+from utils.config_util import SubManager, sub_list
 
 course_sub = require("nonebot_plugin_apscheduler").scheduler
+
+good_night = sub_list.add('熄灯提醒', SubManager('night_sub'))
 
 
 @course_sub.scheduled_job("cron", day_of_week='0-4', hour='22', minute='28', second='00')
