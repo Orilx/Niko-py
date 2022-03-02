@@ -277,7 +277,7 @@ class scheduleManager(Config):
                 cs_li[k] = v
 
         for k in sorted(cs_li):
-            msg += f'第{time_table.get(k[1:5])}节  {v.get("c_name")}, {v.get("c_room")}\n'
+            msg += f'第{time_table.get(k[1:5])}节  {cs_li[k]["c_name"]}, {cs_li[k]["c_room"]}\n'
         return msg
 
     def get_cs_week(self):

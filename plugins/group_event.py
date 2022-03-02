@@ -1,18 +1,19 @@
 from nonebot import on_notice
 from nonebot.adapters.onebot.v11 import GroupIncreaseNoticeEvent, HonorNotifyEvent, \
     MessageSegment
-from plugins.sub_config.services import honor_sub
+from utils.config_util import SubManager, sub_list
 
 member_increase = on_notice(priority=1, block=True)
 # member_decrease = on_notice(priority=1)
 honor = on_notice(priority=1, block=True)
 
-
-# test = on_command('testing', block=False, permission=SUPERUSER)
+mem_notice = sub_list.add('入群欢迎', SubManager('mem_increase_notice'))
 
 
 @member_increase.handle()
-async def member_increase_(event: GroupIncreaseNoticeEvent):
+async def _(event: GroupIncreaseNoticeEvent):
+    if event.group_id not in mem_notice.get_groups():
+        await member_increase.finish()
     if event.is_tome():
         await member_increase.finish()
     await member_increase.send("\n欢迎大佬入群！群地位-1", at_sender=True)
@@ -34,6 +35,9 @@ async def member_increase_(event: GroupIncreaseNoticeEvent):
 
 #     await member_decrease.finish(f"{info.get('nickname')}({id})\n离开了我们")
 
+honor_sub = sub_list.add('龙王提醒', SubManager('honor_sub'))
+
+
 @honor.handle()
 async def honor_(event: HonorNotifyEvent):
     if not honor_sub.get_status():
@@ -48,4 +52,3 @@ async def honor_(event: HonorNotifyEvent):
         await honor.finish('啊嘞？龙王竟是我自己！')
     msg = '恭喜' + MessageSegment.at(event.user_id) + '成为今日龙王~'
     await honor.finish(msg)
-

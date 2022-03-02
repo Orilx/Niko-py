@@ -2,7 +2,7 @@ from nonebot import on_command
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent
-from plugins.sub_config.services import key_words
+from utils.config_util import SubManager, sub_list
 
 add_subscribe = on_command('订阅', priority=5, permission=SUPERUSER)
 rm_subscribe = on_command('退订', priority=5, permission=SUPERUSER)
@@ -17,8 +17,8 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
     if not param:
         await add_subscribe.finish('你想订阅啥？')
     else:
-        if key_words.get(param):
-            sub = key_words.get(param)
+        if sub_list.get(param):
+            sub = sub_list.get(param)
         else:
             await add_subscribe.finish('咱目前不提供这项服务~')
 
@@ -35,8 +35,8 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
     if not param:
         await add_subscribe.finish('你想退订啥？')
     else:
-        if key_words.get(param):
-            sub = key_words.get(param)
+        if sub_list.get(param):
+            sub = sub_list.get(param)
         else:
             await rm_subscribe.finish('咱目前不提供这项服务~')
 
@@ -49,19 +49,19 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
 async def _(event: GroupMessageEvent, par: Message = CommandArg()):
     """
     修改各订阅项目的状态
-    本命令影响各订阅项目配置文件中的`enable`字段
+    本命令影响配置文件中各订阅项目的`enable`字段
     """
     if not par:
         msg = '服务状态 (▲表示已开启)：'
     else:
         param = par.extract_plain_text()
-        if key_words.get(param):
-            await key_words.get(param).ch_status()
+        if sub_list.get(param):
+            await sub_list.get(param).ch_status()
         else:
             await s_manager.finish('咱目前不提供这项服务~')
         msg = '修改成功！\n当前服务状态：'
-
-    for k, v in key_words.items():
+    li = sub_list.get_items()
+    for k, v in li.items():
         if v.get_status():
             msg += f'\n▲ {k}'
         else:
@@ -71,8 +71,9 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
 
 @search.handle()
 async def _(event: GroupMessageEvent):
+    li = sub_list.get_items()
     msg = '提供的服务 (◆表示已订阅)：'
-    for k, v in key_words.items():
+    for k, v in li.items():
         if v.has_group(event.group_id):
             msg += f'\n◆ {k}'
         else:
