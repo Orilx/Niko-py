@@ -1,19 +1,19 @@
 import asyncio
 import datetime
 
+from nonebot import get_driver, logger, on_command, require
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message
-from nonebot import on_command, require, logger, get_driver
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 from utils.config_util import SubManager, sub_list
-from utils.utils import send_group_msg, get_diff_days_2_now
-from .data_source import cs_manager, s_config, StatusCode
+from utils.utils import get_diff_days_2_now, send_group_msg
+
 from ..weather import Weather
+from .data_source import StatusCode, cs_manager, s_config
 
 course_sub = require("nonebot_plugin_apscheduler").scheduler
 
-weekday = datetime.datetime.now().weekday() + 1
-week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
+
 week_table = {1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '日'}
 
 super_group = get_driver().config.super_group
@@ -49,10 +49,11 @@ async def run():
     w = Weather(city)
     await w.load_data()
     data = w.daily['daily'][0]
-
-    msg = f'早上好！\n今天是周{week_table.get(weekday)}，本学期第 {week} 周\n============\n今日课表：\n' + cs_manager.get_cs_today()
+    weekday = datetime.datetime.now().weekday() + 1
+    week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
+    msg = f'早上好！\n今天是周{week_table.get(weekday)}，本学期第 {week} 周\n============\n今日课表：' + cs_manager.get_cs_today()
     # 附加天气
-    msg += f'============\n{city}  日间天气：\n{data["textDay"]}，{data["tempMin"]}~{data["tempMax"]}℃'
+    msg += f'\n============\n{city}  日间天气：\n{data["textDay"]}，{data["tempMin"]}~{data["tempMax"]}℃'
 
     group_id = c_schedule_sub.get_groups()
     for g_id in group_id:
