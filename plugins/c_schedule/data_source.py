@@ -152,6 +152,7 @@ class scheduleManager(Config):
         """
         手动添加数据到 sub_table, 若表中已有返回 False
         课程名称，节次，教室，开始/结束周次
+        TODO 可能存在一个时间对应多个在不同周的课的情况,目前不知道该怎么处理
         """
         if c_time in self.source_data['sub_table']:
             return StatusCode.CONFLICT_ERR
@@ -261,32 +262,34 @@ class scheduleManager(Config):
         获取今天的课表
         """
         time_table = {'0102': '一', '0304': '二', '0506': '三', '0708': '四', '0910': '五'}
-        msg = ''
+        msg = '今日课表：'
 
         if not s_config.is_begin():
             return '别急，还没开学呢~'
 
         # 计算今天是周几
         weekday = datetime.datetime.now().weekday() + 1
+        week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
         cs_li = {}
         for k, v in self.source_data["main_table"].items():
             if k[0] == str(weekday):
                 cs_li[k] = v
         for k, v in self.source_data["sub_table"].items():
-            if k[0] == str(weekday):
+            if k[0] == str(weekday) and week in range(v['c_start_week'],v["c_end_week"]+1):
                 cs_li[k] = v
 
         for k in sorted(cs_li):
-            msg += f'第{time_table.get(k[1:5])}节  {cs_li[k]["c_name"]}, {cs_li[k]["c_room"]}\n'
+            msg += f'\n第{time_table.get(k[1:5])}节  {cs_li[k]["c_name"]}, {cs_li[k]["c_room"]}'
         return msg
 
     def get_cs_week(self):
         """
         获取本周的课表
         """
+        week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
         week_table = {'1': '一', '2': '二', '3': '三', '4': '四', '5': '五', '6': '六', '7': '日'}
         time_table = {'0102': '一', '0304': '二', '0506': '三', '0708': '四', '0910': '五'}
-        msg = ''
+        msg = '本周课表：'
 
         if not s_config.is_begin():
             return '别急，还没开学呢~'
@@ -295,10 +298,11 @@ class scheduleManager(Config):
         for k, v in self.source_data["main_table"].items():
             cs_li[k] = v
         for k, v in self.source_data["sub_table"].items():
-            cs_li[k] = v
+            if week in range(v['c_start_week'],v["c_end_week"]+1):
+                cs_li[k] = v
 
         for i in sorted(cs_li):
-            msg += f'周{week_table.get(i[0])} 第{time_table.get(i[1:5])}节  {cs_li[i]["c_name"]}, {cs_li[i]["c_room"]}\n'
+            msg += f'\n周{week_table.get(i[0])} 第{time_table.get(i[1:5])}节  {cs_li[i]["c_name"]}, {cs_li[i]["c_room"]}'
         return msg
 
     def wipe_data(self):
