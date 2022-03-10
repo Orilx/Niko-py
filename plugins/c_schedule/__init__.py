@@ -51,7 +51,7 @@ async def run():
     data = w.daily['daily'][0]
     weekday = datetime.datetime.now().weekday() + 1
     week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
-    msg = f'早上好！\n今天是周{week_table.get(weekday)}，本学期第 {week} 周\n============\n今日课表：' + cs_manager.get_cs_today()
+    msg = f'早上好！\n今天是周{week_table.get(weekday)}，本学期第 {week} 周\n============' + cs_manager.get_cs_today()
     # 附加天气
     msg += f'\n============\n{city}  日间天气：\n{data["textDay"]}，{data["tempMin"]}~{data["tempMax"]}℃'
 
