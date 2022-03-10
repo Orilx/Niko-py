@@ -127,7 +127,7 @@ class scheduleManager(Config):
             # 当前日期距离开学几周
             week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
             try:
-                if not p:
+                if p:
                     week += 1
                 data = Q.get_class_info(week)
             except Exception as e:
