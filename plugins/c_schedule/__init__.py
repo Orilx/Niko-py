@@ -92,7 +92,7 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
         par_list = par.extract_plain_text().split(' ')
         if len(par_list) != 5:
             await cs_update.finish('参数有误！')
-        code = cs_manager.update_data(*par_list)
+        code = await cs_manager.update_data(*par_list)
         await cs_update.finish(code.errmsg)
 
 

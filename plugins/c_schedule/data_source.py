@@ -1,14 +1,14 @@
 from pathlib import Path
 from enum import Enum
-import requests
 import datetime
+from httpx import AsyncClient
 from nonebot import logger
 
 from utils.config_util import Config
 from utils.utils import get_diff_days_2_now
 
 
-class scheduleConfig(Config):
+class ScheduleConfig(Config):
     """
     配置文件管理类
     """
@@ -39,7 +39,7 @@ class scheduleConfig(Config):
         return get_diff_days_2_now(s_date) >= 0
 
 
-s_config = scheduleConfig()
+s_config = ScheduleConfig()
 
 
 class SW(object):
@@ -47,7 +47,6 @@ class SW(object):
         self.url = "http://jwgl.sdust.edu.cn/app.do"
         self.account = account
         self.password = password
-        self.session = self.login()
 
     HEADERS = {
         "User-Agent": "Mozilla/5.0 (Linux; U; Mobile; Android 6.0.1;C107-9 Build/FRF91 )",
@@ -57,28 +56,27 @@ class SW(object):
         "Cache-control": "max-age=0"
     }
 
-    def login(self):
+    async def login(self, client):
         params = {
             "method": "authUser",
             "xh": self.account,
             "pwd": self.password
         }
-        session = requests.Session()
-        req = session.get(self.url, params=params, timeout=5, headers=self.HEADERS)
+        req = await self.get_handle(params, client)
         self.HEADERS["token"] = req.json()["token"]
-        return session
 
-    def get_handle(self, params):
-        req = self.session.get(self.url, params=params, timeout=5, headers=self.HEADERS)
-        return req
+    async def get_handle(self, params, client):
+        return await client.get(self.url, params=params, timeout=5, headers=self.HEADERS)
 
-    def get_class_info(self, zc) -> list:
+    async def get_class_info(self, zc) -> list:
         params = {
             "method": "getKbcxAzc",
             "zc": zc,
             "xh": self.account
         }
-        req = self.get_handle(params)
+        async with AsyncClient() as client:
+            await self.login(client)
+            req = await self.get_handle(params, client)
         return req.json()
 
 
@@ -102,7 +100,7 @@ class StatusCode(Enum):
         return self.value[1]
 
 
-class scheduleManager(Config):
+class ScheduleManager(Config):
     """
     课表管理类
     TODO 添加课表检索
@@ -112,43 +110,37 @@ class scheduleManager(Config):
         path = Path('data/c_schedules/cs_main_data.yaml')
         super().__init__(path, {'main_table': {}, 'sub_table': {}, "black_list": []})
 
-    def refresh_data(self, p: bool = False):
+    async def refresh_data(self, p: bool = False):
         """
         更新课表
         参数p为True时获取下周课表
         """
-        # 应该没啥用的异常处理
+        q = SW(**s_config.get_user_info())
+        # 现在是第几周
+        week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
         try:
-            Q = SW(**s_config.get_user_info())
+            if p:
+                week += 1
+            data = await q.get_class_info(week)
         except Exception as e:
-            logger.error(f"登录失败,{repr(e)}")
-            return StatusCode.SERVER_ERR
-        else:
-            # 当前日期距离开学几周
-            week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
-            try:
-                if p:
-                    week += 1
-                data = Q.get_class_info(week)
-            except Exception as e:
-                logger.error(f"获取课表信息失败,{repr(e)}")
-                return StatusCode.SC_ERR
-            # if data.get("state") != 1:
-            #     return StatusCode.SERVER_ERR
-            self.wipe_data()
-            for d in data:
-                # 过滤掉周六和周日的课程
-                if d.get("kcsj")[0] not in [str(i) for i in range(6)]:
-                    continue
-                self.source_data['main_table'][d.get("kcsj")] = {
-                    "c_name": d.get("kcmc"),
-                    "c_room": d.get("jsmc"),
-                    "t_name": d.get("jsxm")
-                }
+            logger.error(f"获取课表信息失败,{repr(e)}")
+            return StatusCode.SC_ERR
+        # if data.get("state") != 1:
+        #     return StatusCode.SERVER_ERR
+        self.wipe_data()
+        for d in data:
+            # 过滤掉周六和周日的课程
+            if d.get("kcsj")[0] not in [str(i) for i in range(6)]:
+                continue
+            self.source_data['main_table'][d.get("kcsj")] = {
+                "c_name": d.get("kcmc"),
+                "c_room": d.get("jsmc"),
+                "t_name": d.get("jsxm")
+            }
         self.save_file()
         return self.check_table()
 
-    def update_data(self, c_name, c_time: int, c_room, c_start_week: int, c_end_week: int):
+    async def update_data(self, c_name, c_time: int, c_room, c_start_week: int, c_end_week: int):
         """
         手动添加数据到 sub_table, 若表中已有返回 False
         课程名称，节次，教室，开始/结束周次
@@ -164,11 +156,11 @@ class scheduleManager(Config):
             "c_end_week": int(c_end_week)
         }
         self.save_file()
-        return self.refresh_data()
+        return await self.refresh_data()
 
     def del_data(self, no: int):
         li = self.get_sub_table_list()
-        key = li[no-1]
+        key = li[no - 1]
         self.source_data["sub_table"].pop(key)
         self.save_file()
         return StatusCode.OK
@@ -275,7 +267,7 @@ class scheduleManager(Config):
             if k[0] == str(weekday):
                 cs_li[k] = v
         for k, v in self.source_data["sub_table"].items():
-            if k[0] == str(weekday) and week in range(v['c_start_week'],v["c_end_week"]+1):
+            if k[0] == str(weekday) and week in range(v['c_start_week'], v["c_end_week"] + 1):
                 cs_li[k] = v
 
         for k in sorted(cs_li):
@@ -298,7 +290,7 @@ class scheduleManager(Config):
         for k, v in self.source_data["main_table"].items():
             cs_li[k] = v
         for k, v in self.source_data["sub_table"].items():
-            if week in range(v['c_start_week'],v["c_end_week"]+1):
+            if week in range(v['c_start_week'], v["c_end_week"] + 1):
                 cs_li[k] = v
 
         for i in sorted(cs_li):
@@ -310,4 +302,4 @@ class scheduleManager(Config):
         self.save_file()
 
 
-cs_manager = scheduleManager()
+cs_manager = ScheduleManager()
