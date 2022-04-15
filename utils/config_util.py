@@ -65,12 +65,12 @@ class SubConfig(Config):
             "enable": True
         }
         if data:
-            for k, v in data:
-                d[code][k] = v
+            for k, v in data.items():
+                d[k] = v
 
         self.source_data[code] = d
         self.save_file()
-        return d
+        return self.source_data[code]
 
     async def save(self, name, data):
         self.source_data[name] = data
