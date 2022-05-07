@@ -1,26 +1,23 @@
 from nonebot import on_command
+from nonebot.matcher import Matcher
 from nonebot.adapters.onebot.v11 import GroupMessageEvent
 
 from utils.utils import get_json
-from utils.config_util import sub_config
+from utils.config_util import ConfigManager
 
 status = on_command('status')
 
-d = {
+data = {
     "server_url": "",
     "uuid": "",
     "remote_uuid": "",
     "apikey": ""
 }
-conf = sub_config.register("mc_status", d)
-print(conf)
+conf = ConfigManager.register("mc_status", data)
 
 
 @status.handle()
-async def _(event: GroupMessageEvent):
-    if event.group_id not in conf["group_id"]:
-        await status.finish()
-
+async def mc_server_status(matcher: Matcher):
     query = {
         "uuid": conf["uuid"],
         "remote_uuid": conf["remote_uuid"],
@@ -30,11 +27,12 @@ async def _(event: GroupMessageEvent):
         "accept": "application/json"
     }
     js = await get_json(conf["server_url"], query, headers)
+    msg = ''
     if not js:
-        await status.finish('エラー発生')
+        msg += 'エラー発生'
+        await matcher.send(msg)
 
     data = js['data']
-    msg = ''
 
     if data["status"] == 0:
         msg += f'服务器当前状态：关闭\n上次启动时间：{data["config"]["lastDatetime"]}'
@@ -52,4 +50,4 @@ async def _(event: GroupMessageEvent):
         else:
             msg += '服务器正在启动...'
 
-    await status.finish(msg)
+    await matcher.send(msg)

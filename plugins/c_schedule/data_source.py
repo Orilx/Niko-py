@@ -4,11 +4,11 @@ import datetime
 from httpx import AsyncClient
 from nonebot import logger
 
-from utils.config_util import Config
+from utils.config_util import FileManager
 from utils.utils import get_diff_days_2_now
 
 
-class ScheduleConfig(Config):
+class ScheduleConfig(FileManager):
     """
     配置文件管理类
     """
@@ -100,7 +100,7 @@ class StatusCode(Enum):
         return self.value[1]
 
 
-class ScheduleManager(Config):
+class ScheduleManager(FileManager):
     """
     课表管理类
     TODO 添加课表检索
@@ -116,7 +116,8 @@ class ScheduleManager(Config):
         参数p为True时获取下周课表
         """
         q = SW(**s_config.get_user_info())
-        # 现在是第几周
+
+        # 当前日期距离开学几周
         week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
         try:
             if p:

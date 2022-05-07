@@ -7,7 +7,7 @@ from ruamel import yaml
 super_group = get_driver().config.super_group
 
 
-class Config:
+class FileManager:
     def __init__(self, path, data: Union[dict, list]):
         # 如果文件不存在，就自动生成
         self.path = path
@@ -20,64 +20,32 @@ class Config:
         with open(self.path, "w", encoding="utf-8") as f:
             f.write(yaml.dump(self.source_data, default_flow_style=False, allow_unicode=True,
                               Dumper=yaml.RoundTripDumper))
-        return True
 
 
-# class ConfigFileManager(Config):
-#     """
-#     存储各个配置文件的文件名
-#     """
-#
-#     def __init__(self):
-#         path = Path('data/config/config_files.yaml')
-#         super().__init__(path, {})
-#
-#     def add_path(self, file_name: str):
-#         self.source_data[file_name] = f'{file_name}.yaml'
-#         super().save_file()
-#
-#     def get_paths(self):
-#         return self.source_data
-
-
-# 实例化 配置文件地址 存储类
-# file_manager = ConfigFileManager()
-
-class SubConfig(Config):
+class ConfigManager:
     """
-    bot订阅相关配置文件管理类
+    bot 配置文件管理类
     """
+    path = Path(f"data/config/bot_configs.yaml")
+    file_manager = FileManager(path, {})
+    data = file_manager.source_data
 
-    def __init__(self):
-        self.items = {}
-        path = Path(f"data/config/bot_configs.yaml")
-        super().__init__(path, {})
-
-    def register(self, code: str, data: dict = None):
+    @classmethod
+    def register(cls, code: str, data: dict = None):
         """
-        在 bot_configs 中注册订阅项目，可手动定义额外字段
+        在 bot_configs.yaml 中注册订阅项目，手动定义额外字段
         """
-        if code in self.source_data:
-            return self.source_data[code]
+        if code in cls.data:
+            return cls.data[code]
 
-        d = {
-            "group_id": [int(i) for i in super_group],
-            "enable": True
-        }
-        if data:
-            for k, v in data.items():
-                d[k] = v
+        cls.save(code, data)
+        return cls.data[code]
 
-        self.source_data[code] = d
-        self.save_file()
-        return self.source_data[code]
-
-    async def save(self, name, data):
-        self.source_data[name] = data
-        super().save_file()
-
-
-sub_config = SubConfig()
+    @classmethod
+    def save(cls, code, data):
+        cls.data[code] = data
+        cls.file_manager.source_data = cls.data
+        cls.file_manager.save_file()
 
 
 class SubManager:
@@ -88,11 +56,17 @@ class SubManager:
 
     def __init__(self, code: str, data: dict = None):
         self.code = code
-        self.data = sub_config.register(code, data)
+        d = {
+            "group_id": [int(i) for i in super_group],
+            "enable": True
+        }
+        if data:
+            for k, v in data.items():
+                d[k] = v
+        self.data = ConfigManager.register(code, d)
 
     async def save_file(self):
-        sub_config.source_data[self.code] = self.data
-        await sub_config.save(self.code, self.data)
+        ConfigManager.save(self.code, self.data)
         return True
 
     def get(self, param: str = None):
@@ -135,20 +109,18 @@ class SubList:
     """
     给 订阅管理 设计的数据类
     """
+    items = {}
 
-    def __init__(self):
-        self.items = {}
+    @classmethod
+    def get_items(cls):
+        return cls.items
 
-    def get_items(self):
-        return self.items
+    @classmethod
+    def get(cls, name) -> SubManager:
+        return cls.items.get(name)
 
-    def get(self, name):
-        return self.items.get(name)
-
-    def add(self, name: str, sub):
-        self.items[name] = sub
+    @classmethod
+    def add(cls, name: str, sub: SubManager) -> SubManager:
+        cls.items[name] = sub
         logger.info(f"订阅添加: {name}")
         return sub
-
-
-sub_list = SubList()

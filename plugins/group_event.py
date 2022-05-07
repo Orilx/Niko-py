@@ -1,13 +1,13 @@
 from nonebot import on_notice
 from nonebot.adapters.onebot.v11 import GroupIncreaseNoticeEvent, HonorNotifyEvent, \
     MessageSegment
-from utils.config_util import SubManager, sub_list
+from utils.config_util import SubManager, SubList
 
 member_increase = on_notice(priority=1, block=True)
 # member_decrease = on_notice(priority=1)
 honor = on_notice(priority=1, block=True)
 
-mem_notice = sub_list.add('入群欢迎', SubManager('mem_increase_notice'))
+mem_notice = SubList.add('入群欢迎', SubManager('mem_increase_notice'))
 
 
 @member_increase.handle()
@@ -35,7 +35,7 @@ async def _(event: GroupIncreaseNoticeEvent):
 
 #     await member_decrease.finish(f"{info.get('nickname')}({id})\n离开了我们")
 
-honor_sub = sub_list.add('龙王提醒', SubManager('honor_sub'))
+honor_sub = SubList.add('龙王提醒', SubManager('honor_sub'))
 
 
 @honor.handle()
