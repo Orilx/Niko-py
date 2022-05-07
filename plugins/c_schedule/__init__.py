@@ -5,7 +5,7 @@ from nonebot import get_driver, logger, on_command, require
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
-from utils.config_util import SubManager, sub_list
+from utils.config_util import SubManager, SubList
 from utils.utils import get_diff_days_2_now, send_group_msg
 
 from ..weather import Weather
@@ -21,15 +21,16 @@ super_group = get_driver().config.super_group
 
 @course_sub.scheduled_job("cron", day_of_week='5', hour='12', minute='00', second='00')
 async def update():
-    if cs_manager.refresh_data(True):
+    code = await cs_manager.refresh_data(True)
+    if code.code == 0:
         logger.success("课表定时更新成功")
     else:
         logger.warning("课表定时更新失败")
         for id in super_group:
-            await send_group_msg(id, "课表更新失败,请及时检查日志~")
+            await send_group_msg(id, "课表更新失败,请检查日志~")
 
 
-c_schedule_sub = sub_list.add('每日课表', SubManager('cs_sub'))
+c_schedule_sub = SubList.add('每日课表', SubManager('cs_sub'))
 
 
 @course_sub.scheduled_job("cron", day_of_week='0-4', hour='07', minute='10', second='00')
@@ -51,7 +52,7 @@ async def run():
     data = w.daily['daily'][0]
     weekday = datetime.datetime.now().weekday() + 1
     week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
-    msg = f'早上好！\n今天是周{week_table.get(weekday)}，本学期第 {week} 周\n============' + cs_manager.get_cs_today()
+    msg = f'早上好！\n今天是周{week_table.get(weekday)}，本学期第 {week} 周\n==========\n' + cs_manager.get_cs_today()
     # 附加天气
     msg += f'\n============\n{city}  日间天气：\n{data["textDay"]}，{data["tempMin"]}~{data["tempMax"]}℃'
 
@@ -115,7 +116,7 @@ async def _(event: GroupMessageEvent, par: Message = CommandArg()):
 
 @cs_refresh.handle()
 async def _(event: GroupMessageEvent):
-    code = cs_manager.refresh_data()
+    code = await cs_manager.refresh_data()
     await cs_refresh.finish(code.errmsg)
 
 

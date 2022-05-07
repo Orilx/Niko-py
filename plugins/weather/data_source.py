@@ -2,8 +2,14 @@ import asyncio
 from nonebot import get_driver
 from utils.utils import get_json
 
-api_key = get_driver().config.qweather_apikey
+from utils.config_util import ConfigManager
 
+
+data = {
+    "api_key": "",
+}
+conf = ConfigManager.register("qweather", data)
+api_key = conf["api_key"]
 
 class Weather:
     def __url__(self):

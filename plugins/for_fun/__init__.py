@@ -1,33 +1,35 @@
 import asyncio
+import datetime
+import json
 import os
-import random
 from pathlib import Path
+from random import choice, randint
+from re import match
 
-from nonebot import get_driver, logger, on_command, on_notice, plugin, require
+from nonebot import logger, on_command, on_notice, on_regex, require
+from nonebot.adapters.onebot.v11 import (GROUP, Bot, GroupMessageEvent,
+                                         Message, MessageSegment,
+                                         PokeNotifyEvent)
 from nonebot.params import CommandArg
-from nonebot.adapters.onebot.v11 import (GroupMessageEvent, Message,
-                                         MessageSegment, PokeNotifyEvent)
-from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
-from utils.config_util import SubManager, sub_list
-from utils.utils import send_group_msg
+from utils.config_util import SubList, SubManager
+from utils.utils import get_json, send_group_msg
 
-from utils.utils import get_json
 from ..weather import Weather
 
 """
 for_fun : 一些实现起来比较简单的指令和定时任务
 """
-course_sub = require("nonebot_plugin_apscheduler").scheduler
+scheduler = require("nonebot_plugin_apscheduler").scheduler
 
 """
 定时任务
 """
 
-good_night = sub_list.add('熄灯提醒', SubManager('night_sub'))
+good_night = SubList.add('熄灯提醒', SubManager('night_sub'))
 
 
-@course_sub.scheduled_job("cron", day_of_week='0-4,6', hour='22', minute='28', second='00')
+@scheduler.scheduled_job("cron", day_of_week='0-4,6', hour='22', minute='28', second='00')
 async def sleep():
     city = '黄岛'
     w = Weather(city)
@@ -43,14 +45,27 @@ async def sleep():
             logger.warning(f'向 {g_id} 发送熄灯提醒失败')
 
 
+@scheduler.scheduled_job("cron", day_of_week='0-4', hour='08', minute='10', second='00')
+async def clock_in():
+    group_id = 834474326
+    msg = MessageSegment.at(3306007889) + \
+        MessageSegment.at(2428444726) + '打卡了没'
+    for i in range(randint(1, 5)):
+        await asyncio.sleep(1)
+        await send_group_msg(group_id, msg)
+
+
 """
 一些无聊的指令
 """
 
+SETU_PATH = 'resources/images/setu/'  # "色图"存放的地址
+
 ping = on_command('ping', priority=5, block=True)
-# open_door = on_command('芝麻开门', priority=5, block=True)
 setu = on_command('来点色图', aliases={"GKD"}, priority=5, block=True)
-hitokoto = on_command('一言')
+hitokoto = on_command('一言', priority=5, block=True)
+crazy = on_regex(r'疯狂星期\S', permission=GROUP, priority=5, block=True)
+
 
 
 @ping.handle()
@@ -58,19 +73,46 @@ async def _():
     await ping.finish('pong!')
 
 
-IMG_PATH = 'resources/images/setu/'
-
-
 @setu.handle()
-async def setu_(event: GroupMessageEvent):
-    ran = random.choice(os.listdir(IMG_PATH))
-    img = MessageSegment.image(f"file:///{Path(IMG_PATH + ran).absolute()}")
-    await setu.send(img)
-    await setu.finish('您点的一份色图\n喵~', at_sender=True)
+async def _(event: GroupMessageEvent):
+    """
+    “来点色图”
+    """
+    msg = MessageSegment.reply(event.message_id) + '您点的一份色图~' + MessageSegment.image(
+        f"file:///{Path(SETU_PATH + choice(os.listdir(SETU_PATH))).absolute()}")
+    await setu.finish(msg)
+
+
+@crazy.handle()
+async def _(bot: Bot, event: GroupMessageEvent):
+    """
+    “疯狂星期四”
+    """
+    msg = event.get_plaintext()
+    matcher = (match(r'疯狂星期(\S)', msg.replace('天', '日')))
+    if not matcher:
+        await crazy.finish()
+    day = matcher.group(1)
+    tb = ['月', '一', '火', '二', '水', '三', '木', '四', '金', '五', '土', '六', '日', '日']
+    if day not in tb:
+        await crazy.finish()
+    idx = int(tb.index(day) / 2) * 2
+    # json数据存放路径
+    path = Path('resources/text_data/Thursday.json')
+    # 将json对象加载到数组
+    with open(path, 'r', encoding='utf-8') as f:
+        kfc = json.load(f).get('post')
+    # 随机选取数组中的一个对象
+    rep = choice(kfc).replace('星期四', '星期' + tb[idx + 1]).replace(
+        '周四', '周' + tb[idx + 1]).replace('木曜日', tb[idx] + '曜日')
+    await crazy.finish(rep)
 
 
 @hitokoto.handle()
-async def hitokoto_(par: Message = CommandArg()):
+async def _(par: Message = CommandArg()):
+    """
+    一言
+    """
     key_word = {'a': 'a', 'b': 'b', 'c': 'c', 'd': 'd', 'e': 'i', 'wyy': 'j'}
     param = '?c=a&c=b&c=c&c=d&c=i'
     if par:
@@ -93,13 +135,23 @@ poke = on_notice(priority=1, rule=to_me(), block=False)
 
 @poke.handle()
 async def poke_(event: PokeNotifyEvent):
+    tb = ['一', '二', '三', '四', '五', '六', '日', '月', '火', '水', '木', '金', '土', '日']
+    path = Path('resources/text_data/Thursday.json')
+    # 将json对象加载到数组
+    with open(path, 'r', encoding='utf-8') as f:
+        kfc = json.load(f).get('post')
     msg = '嗷'
-    if random.randint(0, 5):
+    if randint(0, 101) % 2:
         msg += '~'
-    elif random.randint(0, 3):
-        msg += '!'
+    elif randint(0, 101) % 2:
+        msg += '呜!'
     else:
         msg += '?'
-    if not random.randint(0, 5):
+
+    if not randint(0, 5):
         msg = '喵~'
+    if not randint(0, 10):
+        weekday = datetime.datetime.now().weekday()
+        msg = choice(kfc).replace('星期四', '星期' + tb[weekday]).replace('周四', '周' + tb[weekday]).replace('木曜日', tb[
+            weekday + 7] + '曜日')
     await poke.finish(msg)

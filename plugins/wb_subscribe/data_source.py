@@ -3,7 +3,7 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 from nonebot import get_driver, logger
-from utils.config_util import Config
+from utils.config_util import FileManager
 from utils.utils import get_json
 
 super_group = get_driver().config.super_group
@@ -73,7 +73,7 @@ async def get_data(uid):
     return data[x]
 
 
-class WbSubConfig(Config):
+class WbSubConfig(FileManager):
 
     def __init__(self):
         """
