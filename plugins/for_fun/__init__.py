@@ -32,9 +32,8 @@ good_night = SubList.add('熄灯提醒', SubManager('night_sub'))
 @scheduler.scheduled_job("cron", day_of_week='0-4,6', hour='22', minute='28', second='00')
 async def sleep():
     city = '黄岛'
-    w = Weather(city)
-    await w.load_data()
-    data = w.daily['daily'][1]
+    weather = await Weather.daily(city)
+    data = weather['daily'][1]
     msg = f'宿舍即将断电~\n{city}明天天气：{data["textDay"]}，{data["tempMin"]}~{data["tempMax"]}℃'
     group_id = good_night.get_groups()
     for g_id in group_id:
@@ -49,7 +48,7 @@ async def sleep():
 async def clock_in():
     group_id = 834474326
     msg = MessageSegment.at(3306007889) + \
-        MessageSegment.at(2428444726) + '打卡了没'
+          MessageSegment.at(2428444726) + '打卡了没'
     for i in range(randint(1, 5)):
         await asyncio.sleep(1)
         await send_group_msg(group_id, msg)
@@ -65,7 +64,6 @@ ping = on_command('ping', priority=5, block=True)
 setu = on_command('来点色图', aliases={"GKD"}, priority=5, block=True)
 hitokoto = on_command('一言', priority=5, block=True)
 crazy = on_regex(r'疯狂星期\S', permission=GROUP, priority=5, block=True)
-
 
 
 @ping.handle()
@@ -98,7 +96,7 @@ async def _(bot: Bot, event: GroupMessageEvent):
         await crazy.finish()
     idx = int(tb.index(day) / 2) * 2
     # json数据存放路径
-    path = Path('resources/text_data/Thursday.json')
+    path = Path('resources/text/Thursday.json')
     # 将json对象加载到数组
     with open(path, 'r', encoding='utf-8') as f:
         kfc = json.load(f).get('post')
@@ -136,7 +134,7 @@ poke = on_notice(priority=1, rule=to_me(), block=False)
 @poke.handle()
 async def poke_(event: PokeNotifyEvent):
     tb = ['一', '二', '三', '四', '五', '六', '日', '月', '火', '水', '木', '金', '土', '日']
-    path = Path('resources/text_data/Thursday.json')
+    path = Path('resources/text/Thursday.json')
     # 将json对象加载到数组
     with open(path, 'r', encoding='utf-8') as f:
         kfc = json.load(f).get('post')

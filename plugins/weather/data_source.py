@@ -4,54 +4,47 @@ from utils.utils import get_json
 
 from utils.config_util import ConfigManager
 
-
 data = {
     "api_key": "",
 }
 conf = ConfigManager.register("qweather", data)
 api_key = conf["api_key"]
 
+
 class Weather:
-    def __url__(self):
-        self.url_weather_api = "https://devapi.qweather.com/v7/weather/"
-        self.url_geoapi = "https://geoapi.qweather.com/v2/city/lookup"
+    url_weather_api = "https://devapi.qweather.com/v7/weather/"
+    url_geoapi = "https://geoapi.qweather.com/v2/city/lookup"
+    apikey = api_key
 
-    def __init__(self, city_name: str):
-        self.daily = None
-        self.now = None
-        self.city_id = None
-        self.city_name = city_name
-        self.apikey = api_key
-        self.__url__()
-
-    async def load_data(self):
-        self.city_id = await self._get_city_id()
-        self.now, self.daily = await asyncio.gather(
-            self._now, self._daily
-        )
-
-    async def _get_city_id(self):
+    @classmethod
+    async def get_city_id(cls, city_name):
         res = await get_json(
-            url=self.url_geoapi,
-            params={"range": "cn", "location": self.city_name, "key": self.apikey}
+            url=cls.url_geoapi,
+            params={"range": "cn", "location": city_name, "key": cls.apikey}
         )
         if res["code"] == "200":
             return res["location"][0]["id"]
         else:
             return -1
 
-    @property
-    async def _now(self) -> dict:
+    @classmethod
+    async def now(cls, city_name) -> dict:
+        city_id = await cls.get_city_id(city_name)
+        if city_id == -1:
+            return city_id
         res = await get_json(
-            url=self.url_weather_api + "now",
-            params={"location": self.city_id, "key": self.apikey},
+            url=cls.url_weather_api + "now",
+            params={"location": city_id, "key": cls.apikey},
         )
         return res
 
-    @property
-    async def _daily(self) -> dict:
+    @classmethod
+    async def daily(cls, city_name) -> dict:
+        city_id = await cls.get_city_id(city_name)
+        if city_id == -1:
+            return city_id
         res = await get_json(
-            url=self.url_weather_api + "3d",
-            params={"location": self.city_id, "key": self.apikey},
+            url=cls.url_weather_api + "3d",
+            params={"location": city_id, "key": cls.apikey},
         )
         return res
