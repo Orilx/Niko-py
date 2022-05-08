@@ -19,11 +19,13 @@ week_table = {1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '�
 super_group = get_driver().config.super_group
 
 
-@course_sub.scheduled_job("cron", day_of_week='5', hour='12', minute='00', second='00')
+@course_sub.scheduled_job("cron", day_of_week='4', hour='19', minute='35', second='00')
 async def update():
     code = await cs_manager.refresh_data(True)
     if code.code == 0:
         logger.success("课表定时更新成功")
+        for id in super_group:
+            await send_group_msg(id, "课表更新成功~")
     else:
         logger.warning("课表定时更新失败")
         for id in super_group:
@@ -47,9 +49,8 @@ async def run():
         return
     # 获取天气
     city = s_config.get_location()
-    w = Weather(city)
-    await w.load_data()
-    data = w.daily['daily'][0]
+    w_daily = await Weather.daily(city)
+    data = w_daily['daily'][0]
     weekday = datetime.datetime.now().weekday() + 1
     week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
     msg = f'早上好！\n今天是周{week_table.get(weekday)}，本学期第 {week} 周\n==========\n' + cs_manager.get_cs_today()
