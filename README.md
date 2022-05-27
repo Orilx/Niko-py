@@ -5,10 +5,11 @@
 - [x] 微博订阅
 - [x] 基于 [强智教务API](https://github.com/WindrunnerMax/SHST) 的课表查询
 - [x] 喜报图片生成
-- [x] bing每日一图
+- [x] 伪造群员发言
 - [x] 来点setu
 - [x] 使用 [MCSManager](https://github.com/MCSManager/MCSManager) API 的 mc 服务器状态查询
 - [x] 一言
+- [x] bing每日一图
 - [x] 天气查询（待完善）
 - [x] 网易云音乐点歌（待完善）
 - [x] ...
@@ -37,5 +38,6 @@ nb plugin install nonebot-plugin-gocqhttp
 [nonebot / nonebot2](https://github.com/nonebot/nonebot2) ：跨平台Python异步机器人框架  
 [WindrunnerMax / SHST](https://github.com/WindrunnerMax/SHST) ：强智教务API & 山科小站  
 [StarHeartHunt / WeiboMonitor](https://github.com/StarHeartHunt/WeiboMonitor) ：微博爬虫  
+[HibiKier / zhenxun_bot](https://github.com/HibiKier/zhenxun_bot) ：绪山真寻Bot
 [MinatoAquaCrews / nonebot_plugin_crazy_thursday](https://github.com/MinatoAquaCrews/nonebot_plugin_crazy_thursday) ：疯狂星期四
 

@@ -23,6 +23,41 @@ async def send_group_msg(group_id: int, msg):
         return True
 
 
+async def send_group_forward_msg(group_id: int, msg):
+    """
+    发送合并转发 (群)
+    """
+    try:
+        await nonebot.get_bot().call_api('send_group_forward_msg', **{
+            'group_id': group_id,
+            'messages': msg
+        })
+    except exception.NetworkError as ne:
+        logger.warning(f'向{group_id}发送 合并转发 失败,{repr(ne)}')
+        return False
+    else:
+        return True
+
+
+async def get_group_member_info(group_id, user_id):
+    """
+    获取群成员信息
+    """
+    info = await nonebot.get_bot().call_api('get_group_member_info', **{
+        'group_id': group_id,
+        'user_id': user_id
+    })
+    return info
+
+
+async def get_login_info():
+    """
+    获取登录号信息
+    """
+    info = await nonebot.get_bot().call_api('get_login_info')
+    return info
+
+
 async def get_json(url: str, params=None, headers=None):
     if params is None:
         params = {}
