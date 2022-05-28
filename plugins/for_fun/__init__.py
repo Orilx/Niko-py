@@ -13,8 +13,8 @@ from nonebot.adapters.onebot.v11 import (GROUP, Bot, GroupMessageEvent,
 from nonebot.params import CommandArg
 from nonebot.rule import to_me
 from utils.config_util import SubList, SubManager
-from utils.message_builder import poke_cq, fake_node_msg
-from utils.utils import get_json, send_group_msg, send_group_forward_msg, get_login_info, get_group_member_info
+from utils.message_builder import poke_cq
+from utils.utils import get_json, send_group_msg
 
 from ..weather import Weather
 
@@ -75,7 +75,7 @@ setu = on_command('来点色图', aliases={"GKD"}, priority=5, block=True)
 hitokoto = on_command('一言', priority=5, block=True)
 crazy = on_regex(r'疯狂星期\S', permission=GROUP, priority=5, block=True)
 mc_map = on_command('map', priority=5, block=True)
-fake = on_command('fake', aliases={"假消息"}, priority=5, block=True)
+
 
 
 @ping.handle()
@@ -98,32 +98,7 @@ async def _(event: GroupMessageEvent):
     await setu.finish(msg)
 
 
-@fake.handle()
-async def _(event: GroupMessageEvent, args: Message = CommandArg()):
-    at = []
-    msg = []
-    fake_msg = []
-    for i in args:
-        if i.type == 'at':
-            if i.data["qq"] == 'all':
-                continue
-            else:
-                at.append(i.data["qq"])
-        else:
-            msg.append(i)
 
-    for i in msg:
-        if i.type == 'text':
-            if i.data["text"].strip():
-                fake_msg.append(MessageSegment.text(i.data["text"].strip()))
-        else:
-            fake_msg.append(i)
-
-    if at and fake_msg:
-        group_forward_msg = await fake_node_msg(at, event.group_id, fake_msg)
-        await send_group_forward_msg(event.group_id, group_forward_msg)
-    else:
-        await fake.finish("参数有误~")
 
 
 def get_crazy(idx: int):
