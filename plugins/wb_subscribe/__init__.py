@@ -7,7 +7,7 @@ from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 
 from plugins.wb_subscribe.data_source import get_data
-from utils.utils import send_group_msg
+from utils.cq_utils import send_group_msg
 from .data_source import wb_sub_config as wb
 
 search_wb = on_command('查询微博', priority=5)

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from nonebot.adapters.onebot.v11 import MessageSegment
-from utils.utils import get_group_member_info, get_login_info
+from utils.cq_utils import get_group_member_info, get_login_info
 
 
 def poke_cq(id: int) -> "MessageSegment":
@@ -18,7 +18,7 @@ async def node_custom_cq(qid: int, gid: int, content: list) -> "MessageSegment":
     return MessageSegment("node", {
         "name": "fake_" + (nick["card"] if nick["card"] else nick["nickname"]) + "_仅供娱乐",
         "uin": qid,
-        "content": [{"type": i["type"], "data": i["data"]} for i in content]
+        "content": [{"type": i.type, "data": i.data} for i in content]
     })
 
 

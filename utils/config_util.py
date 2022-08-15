@@ -13,7 +13,8 @@ class FileManager:
         self.path = path
         if not path.is_file():
             with open(path, "w", encoding="utf-8") as f:
-                f.write(yaml.dump(data, default_flow_style=False))
+                f.write(yaml.dump(data, default_flow_style=False, allow_unicode=True,
+                                  Dumper=yaml.RoundTripDumper))
         self.source_data = yaml.load(path.read_bytes(), Loader=yaml.Loader)
 
     def save_file(self):
@@ -22,18 +23,27 @@ class FileManager:
                               Dumper=yaml.RoundTripDumper))
 
 
+# 解决Python写入yaml后排版混乱还丢失注释问题
+# def setDictYaml(self, fileDir, fileName, key, value):
+#     with open(filePath(fileDir, fileName), 'r', encoding="utf-8") as f:
+#         doc = yaml.round_trip_load(f)
+#     doc[key] = value
+#     with open(filePath(fileDir, fileName), 'w', encoding="utf-8") as f:
+#         yaml.round_trip_dump(doc, f, default_flow_style=False)
+# setDictYaml(fileDir='config', fileName='config.yaml', key='password', value=123)
+
 class ConfigManager:
     """
     bot 配置文件管理类
     """
-    path = Path(f"data/config/bot_configs.yaml")
+    path = Path("data/config/bot_config.yaml")
     file_manager = FileManager(path, {})
     data = file_manager.source_data
 
     @classmethod
     def register(cls, code: str, data: dict = None):
         """
-        在 bot_configs.yaml 中注册订阅项目，手动定义额外字段
+        在 bot_config.yaml 中注册项目
         """
         if code in cls.data:
             return cls.data[code]
@@ -50,8 +60,33 @@ class ConfigManager:
 
 class SubManager:
     """
-    bot订阅相关配置管理类
-    TODO 应该有更好的解决方案
+    bot 订阅文件管理类
+    """
+    path = Path("data/bot_sub_list.yaml")
+    file_manager = FileManager(path, {})
+    data = file_manager.source_data
+
+    @classmethod
+    def register(cls, code: str, data: dict = None):
+        """
+        在 bot_config.yaml 中注册项目
+        """
+        if code in cls.data:
+            return cls.data[code]
+
+        cls.save(code, data)
+        return cls.data[code]
+
+    @classmethod
+    def save(cls, code, data):
+        cls.data[code] = data
+        cls.file_manager.source_data = cls.data
+        cls.file_manager.save_file()
+
+
+class SubItem:
+    """
+    bot 订阅相关管理类
     """
 
     def __init__(self, code: str, data: dict = None):
@@ -63,10 +98,10 @@ class SubManager:
         if data:
             for k, v in data.items():
                 d[k] = v
-        self.data = ConfigManager.register(code, d)
+        self.data = SubManager.register(code, d)
 
     async def save_file(self):
-        ConfigManager.save(self.code, self.data)
+        SubManager.save(self.code, self.data)
         return True
 
     def get(self, param: str = None):
@@ -116,11 +151,15 @@ class SubList:
         return cls.items
 
     @classmethod
-    def get(cls, name) -> SubManager:
+    def get(cls, name) -> SubItem:
         return cls.items.get(name)
 
     @classmethod
-    def add(cls, name: str, sub: SubManager) -> SubManager:
+    def add(cls, name: str, sub: SubItem) -> SubItem:
         cls.items[name] = sub
         logger.info(f"订阅添加: {name}")
         return sub
+
+
+def add_sub_config(name: str, code: str) -> SubItem:
+    return SubList.add(name, SubItem(code))

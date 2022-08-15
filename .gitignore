@@ -143,5 +143,4 @@ dmypy.json
 /.idea/
 Dockerfile
 docker-compose.yml
-/cache/
-/data/wb_sub_list.yaml
+/poetry.lock

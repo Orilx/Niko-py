@@ -1,6 +1,7 @@
-from pathlib import Path
-from enum import Enum
 import datetime
+from enum import Enum
+from pathlib import Path
+
 from httpx import AsyncClient
 from nonebot import logger
 
@@ -8,38 +9,46 @@ from utils.config_util import FileManager
 from utils.utils import get_diff_days_2_now
 
 
-class ScheduleConfig(FileManager):
+class ScheduleConfig():
     """
     配置文件管理类
     """
+    path = Path('data/config/cs_config.yaml')
+    data = FileManager(path, {
+        "userInfo": {
+            "account": "",
+            "password": ""
+        },
+        "super_group": [114514],
+        "start_date": "2021-06-23",  # 开学日期
+        "location": "黄岛",
+        "enable": False  # 是否启用 (定时更新
+    })
 
-    def __init__(self):
-        path = Path('data/c_schedules/cs_config.yaml')
-        super().__init__(path, {
-            "userInfo": {
-                "account": "",
-                "password": ""
-            },
-            "start_date": "",  # 开学日期
-            "location": "黄岛",
-            "enable": False  # 是否启用(开学
-        })
+    @classmethod
+    def get_user_info(cls):
+        return cls.data.source_data["userInfo"]
 
-    def get_user_info(self):
-        return self.source_data["userInfo"]
+    @classmethod
+    def get_start_date(cls):
+        return cls.data.source_data["start_date"]
 
-    def get_start_date(self):
-        return self.source_data["start_date"]
+    @classmethod
+    def get_end_date(cls):
+        return cls.data.source_data["end_date"]
 
-    def get_location(self):
-        return self.source_data["location"]
+    @classmethod
+    def get_location(cls):
+        return cls.data.source_data["location"]
 
-    def is_begin(self):
-        s_date = self.source_data["start_date"]
-        return get_diff_days_2_now(s_date) >= 0
+    @classmethod
+    def get_super_group(cls):
+        return cls.data.source_data["super_group"]
 
-
-s_config = ScheduleConfig()
+    @classmethod
+    def is_begin(cls):
+        st_date = cls.data.source_data["start_date"]
+        return get_diff_days_2_now(st_date) >= 0
 
 
 class SW(object):
@@ -84,8 +93,8 @@ class StatusCode(Enum):
     """状态码枚举类"""
 
     OK = (0, '操作成功')
-    ERROR = (-1, '错误')
-    SERVER_ERR = (101, '强智系统登录失败')
+    ERROR = (-1, '发生错误')
+    SERVER_ERR = (101, '登录失败')
     SC_ERR = (102, '获取课表信息失败')
     CONFLICT_ERR = (201, '存在冲突课程，请检查')
 
@@ -105,20 +114,20 @@ class ScheduleManager(FileManager):
     课表管理类
     TODO 添加课表检索
     """
+    path = Path('data/cs_main_data.yaml')
+    data_manager = FileManager(path, {'main_table': {}, 'sub_table': {}, "black_list": []})
 
-    def __init__(self):
-        path = Path('data/c_schedules/cs_main_data.yaml')
-        super().__init__(path, {'main_table': {}, 'sub_table': {}, "black_list": []})
-
-    async def refresh_data(self, p: bool = False):
+    @classmethod
+    async def refresh_data(cls, p: bool = False):
         """
         更新课表
         参数p为True时获取下周课表
         """
-        q = SW(**s_config.get_user_info())
+        info = ScheduleConfig.get_user_info()
+        q = SW(info["account"], info["password"])
 
         # 当前日期距离开学几周
-        week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
+        week = get_diff_days_2_now(ScheduleConfig.get_start_date()) // 7 + 1
         try:
             if p:
                 week += 1
@@ -128,53 +137,56 @@ class ScheduleManager(FileManager):
             return StatusCode.SC_ERR
         # if data.get("state") != 1:
         #     return StatusCode.SERVER_ERR
-        self.wipe_data()
+        cls.wipe_data()
         for d in data:
             # 过滤掉周六和周日的课程
             if d.get("kcsj")[0] not in [str(i) for i in range(6)]:
                 continue
-            self.source_data['main_table'][d.get("kcsj")] = {
+            cls.data_manager.source_data['main_table'][d.get("kcsj")] = {
                 "c_name": d.get("kcmc"),
                 "c_room": d.get("jsmc"),
                 "t_name": d.get("jsxm")
             }
-        self.save_file()
-        return self.check_table()
+        cls.data_manager.save_file()
+        return cls.check_table()
 
-    async def update_data(self, c_name, c_time: int, c_room, c_start_week: int, c_end_week: int):
+    @classmethod
+    async def update_data(cls, c_name, c_time: int, c_room, c_start_week: int, c_end_week: int):
         """
         手动添加数据到 sub_table, 若表中已有返回 False
         课程名称，节次，教室，开始/结束周次
-        TODO 可能存在一个时间对应多个在不同周的课的情况,目前不知道该怎么处理
+        TODO 可能存在一个时间对应多个在不同周的课的情况,待修复
         """
-        if c_time in self.source_data['sub_table']:
+        if c_time in cls.data_manager.source_data['sub_table']:
             return StatusCode.CONFLICT_ERR
 
-        self.source_data['sub_table'][c_time] = {
+        cls.data_manager.source_data['sub_table'][c_time] = {
             "c_name": c_name,
             "c_room": c_room,
             "c_start_week": int(c_start_week),
             "c_end_week": int(c_end_week)
         }
-        self.save_file()
-        return await self.refresh_data()
+        cls.data_manager.save_file()
+        return await cls.refresh_data()
 
-    def del_data(self, no: int):
-        li = self.get_sub_table_list()
+    @classmethod
+    def del_data(cls, no: int):
+        li = cls.get_sub_table_list()
         key = li[no - 1]
-        self.source_data["sub_table"].pop(key)
-        self.save_file()
+        cls.data_manager.source_data["sub_table"].pop(key)
+        cls.data_manager.save_file()
         return StatusCode.OK
 
-    def get_sub_table_name_list(self):
+    @classmethod
+    def get_sub_table_name_list(cls):
         """
         返回sub_table中课程的详细信息
         """
-        li = self.get_sub_table_list()
+        li = cls.get_sub_table_list()
         if not li:
             return '列表为空~'
         else:
-            sub_table = self.source_data['sub_table']
+            sub_table = cls.data_manager.source_data['sub_table']
             re_str = ''
             i = 1
             for item in li:
@@ -183,26 +195,28 @@ class ScheduleManager(FileManager):
                 i += 1
             return re_str
 
-    def get_sub_table_list(self) -> list:
-        sub_table = self.source_data['sub_table']
+    @classmethod
+    def get_sub_table_list(cls) -> list:
+        sub_table = cls.data_manager.source_data['sub_table']
         re_list = [i for i in sub_table]
         return re_list
 
-    def check_table(self):
+    @classmethod
+    def check_table(cls):
         """
         检查两个表中是否含有冲突项目
         并去除 sub_table 中已结束的课程
         """
         # 当前日期距离开学几周
-        week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
+        week = get_diff_days_2_now(ScheduleConfig.get_start_date()) // 7 + 1
         # 计算今天是周几
         weekday = datetime.datetime.now().weekday() + 1
 
         if weekday in [5, 6]:
             week += 1
-        main_table = self.source_data['main_table']
-        sub_table = self.source_data['sub_table']
-        black_list = self.get_black_list()
+        main_table = cls.data_manager.source_data['main_table']
+        sub_table = cls.data_manager.source_data['sub_table']
+        black_list = cls.get_black_list()
         s_code = StatusCode.OK
 
         bak_main_table = {}
@@ -211,7 +225,7 @@ class ScheduleManager(FileManager):
         for k, v in main_table.items():
             if v.get("c_name") not in black_list:
                 bak_main_table[k] = v
-        self.source_data['main_table'] = bak_main_table
+        cls.data_manager.source_data['main_table'] = bak_main_table
 
         for k, v in sub_table.items():
             # 删除已经结束的课程
@@ -222,52 +236,57 @@ class ScheduleManager(FileManager):
             # 是否有冲突的课程
             if k in main_table and week in range(v["c_start_week"], v["c_end_week"] + 1):
                 s_code = StatusCode.CONFLICT_ERR
-        self.source_data['sub_table'] = bak_sub_table
-        self.save_file()
+        cls.data_manager.source_data['sub_table'] = bak_sub_table
+        cls.data_manager.save_file()
         return s_code
 
-    def add_black_list(self, name: str):
-        self.source_data["black_list"].append(name)
-        return self.check_table()
+    @classmethod
+    def add_black_list(cls, name: str):
+        cls.data_manager.source_data["black_list"].append(name)
+        return cls.check_table()
 
-    def rm_black_list(self, name: str):
-        self.source_data["black_list"].pop(name)
-        return self.check_table()
+    @classmethod
+    def rm_black_list(cls, name: str):
+        cls.data_manager.source_data["black_list"].pop(name)
+        return cls.check_table()
 
-    def get_black_list(self):
-        return self.source_data["black_list"]
+    @classmethod
+    def get_black_list(cls):
+        return cls.data_manager.source_data["black_list"]
 
-    def get_cd_list(self):
+    @classmethod
+    def get_cd_list(cls):
         """
         获取当前数据文件中所有的课程名
         """
         resp = []
-        main_table = self.source_data['main_table']
-        sub_table = self.source_data['sub_table']
+        main_table = cls.data_manager.source_data['main_table']
+        sub_table = cls.data_manager.source_data['sub_table']
         for k, v in main_table.items():
             resp.append(v.get("c_name"))
         for k, v in sub_table.items():
             resp.append(v.get("c_name"))
         return list(set(resp))
 
-    def get_cs_today(self):
+    @classmethod
+    def get_cs_today(cls):
         """
         获取今天的课表
         """
         time_table = {'0102': '一', '0304': '二', '0506': '三', '0708': '四', '0910': '五'}
         msg = '今日课表：'
 
-        if not s_config.is_begin():
+        if not ScheduleConfig.is_begin():
             return '别急，还没开学呢~'
 
         # 计算今天是周几
         weekday = datetime.datetime.now().weekday() + 1
-        week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
+        week = get_diff_days_2_now(ScheduleConfig.get_start_date()) // 7 + 1
         cs_li = {}
-        for k, v in self.source_data["main_table"].items():
+        for k, v in cls.data_manager.source_data["main_table"].items():
             if k[0] == str(weekday):
                 cs_li[k] = v
-        for k, v in self.source_data["sub_table"].items():
+        for k, v in cls.data_manager.source_data["sub_table"].items():
             if k[0] == str(weekday) and week in range(v['c_start_week'], v["c_end_week"] + 1):
                 cs_li[k] = v
 
@@ -275,22 +294,23 @@ class ScheduleManager(FileManager):
             msg += f'\n第{time_table.get(k[1:5])}节  {cs_li[k]["c_name"]}, {cs_li[k]["c_room"]}'
         return msg
 
-    def get_cs_week(self):
+    @classmethod
+    def get_cs_week(cls):
         """
         获取本周的课表
         """
-        week = get_diff_days_2_now(s_config.get_start_date()) // 7 + 1
+        week = get_diff_days_2_now(ScheduleConfig.get_start_date()) // 7 + 1
         week_table = {'1': '一', '2': '二', '3': '三', '4': '四', '5': '五', '6': '六', '7': '日'}
         time_table = {'0102': '一', '0304': '二', '0506': '三', '0708': '四', '0910': '五'}
         msg = '本周课表：'
 
-        if not s_config.is_begin():
+        if not ScheduleConfig.is_begin():
             return '别急，还没开学呢~'
 
         cs_li = {}
-        for k, v in self.source_data["main_table"].items():
+        for k, v in cls.data_manager.source_data["main_table"].items():
             cs_li[k] = v
-        for k, v in self.source_data["sub_table"].items():
+        for k, v in cls.data_manager.source_data["sub_table"].items():
             if week in range(v['c_start_week'], v["c_end_week"] + 1):
                 cs_li[k] = v
 
@@ -298,9 +318,7 @@ class ScheduleManager(FileManager):
             msg += f'\n周{week_table.get(i[0])} 第{time_table.get(i[1:5])}节  {cs_li[i]["c_name"]}, {cs_li[i]["c_room"]}'
         return msg
 
-    def wipe_data(self):
-        self.source_data["main_table"] = {}
-        self.save_file()
-
-
-cs_manager = ScheduleManager()
+    @classmethod
+    def wipe_data(cls):
+        cls.data_manager.source_data["main_table"] = {}
+        cls.data_manager.save_file()
