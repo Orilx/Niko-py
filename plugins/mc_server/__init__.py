@@ -1,53 +1,76 @@
 from nonebot import on_command
-from nonebot.matcher import Matcher
-from nonebot.adapters.onebot.v11 import GroupMessageEvent
 
-from utils.utils import get_json
 from utils.config_util import ConfigManager
+from utils.utils import get_json
 
-status = on_command('status')
+status = on_command('mc_status')
+players = on_command('players')
 
 data = {
     "server_url": "",
     "uuid": "",
     "remote_uuid": "",
-    "apikey": ""
+    "apikey": "",
+    "key": "",
+    "port": ""
 }
+
 conf = ConfigManager.register("mc_status", data)
 
 
-@status.handle()
-async def mc_server_status(matcher: Matcher):
-    query = {
-        "uuid": conf["uuid"],
-        "remote_uuid": conf["remote_uuid"],
-        "apikey": conf["apikey"],
-    }
+async def get_players():
     headers = {
-        "accept": "application/json"
+        "key": conf["key"]
     }
-    js = await get_json(conf["server_url"], query, headers)
-    msg = ''
+    uri = f'{conf["server_url"]}:{conf["port"]}/v1/players'
+    print(uri)
+    js: list = await get_json(uri, headers=headers)
+    return js
+
+
+@players.handle()
+async def _():
+    headers = {
+        "key": conf["key"]
+    }
+    uri = f'{conf["server_url"]}:{conf["port"]}/v1/players'
+    js: list = await get_json(uri, headers=headers)
     if not js:
-        msg += 'エラー発生'
-        await matcher.send(msg)
+        await status.send('エラー発生。\n可能是服务器已关闭或服务端连接异常~')
+        return
+    msg = f'当前在线：{len(js)}人'
+    if js:
+        for i in js:
+            msg += f'\n- {i["displayName"]}'
+    await players.send(msg)
 
-    data = js['data']
 
-    if data["status"] == 0:
-        msg += f'服务器当前状态：关闭\n上次启动时间：{data["config"]["lastDatetime"]}'
+@status.handle()
+async def mc_server_status():
+    headers = {
+        "key": conf["key"]
+    }
+    url = f'{conf["server_url"]}:{conf["port"]}/v1/server'
+    info = await get_json(url, headers=headers)
+    if not info:
+        await status.send('エラー発生。\n可能是服务器已关闭或服务端连接异常~')
+        return
 
-    elif data["status"] == 3:
-        if data["info"]["version"]:
-            time = int(data["processInfo"]["elapsed"]) / 1000
-            d = int(time / (24 * 3600))
-            h = int((time / 3600) % 24)
-            m = int((time / 60) % 60)
-            s = int(time % 60)
-            msg += f'服务器名称：{data["config"]["nickname"]}\n当前状态：开启\n' \
-                   f'启动时间：{data["config"]["lastDatetime"]}\n服务端版本：{data["info"]["version"]}\n' \
-                   f'在线人数：{data["info"]["currentPlayers"]}/{data["info"]["maxPlayers"]}\n已运行：{d}天{h}时{m}分{s}秒'
-        else:
-            msg += '服务器正在启动...'
+    version = info["version"]
+    player_list = await get_players()
+    health = info["health"]
 
-    await matcher.send(msg)
+    up_time = health["uptime"]
+    d = int(up_time / (24 * 3600))
+    h = int((up_time / 3600) % 24)
+    m = int((up_time / 60) % 60)
+    s = int(up_time % 60)
+    mem_max = round(health["maxMemory"]/(1024**3), 2)
+    mem_free = round(health["freeMemory"]/(1024**3), 2)
+
+    msg = f'服务端版本：{version}' \
+        f'\n当前在线人数：{len(player_list)}'\
+        f'\n内存占用: {round(mem_max - mem_free,2)}/{mem_max}G ({round((1-mem_free / mem_max) * 100, 2)}%)'\
+        f'\n已运行：{d}天{h}时{m}分{s}秒'\
+
+    await status.send(msg)
