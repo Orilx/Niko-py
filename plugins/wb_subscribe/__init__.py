@@ -1,14 +1,22 @@
 import asyncio
 import json
 
-from nonebot import on_command, require, logger
+from nonebot import on_command, require, logger, plugin
 from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent, MessageSegment
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 
-from plugins.wb_subscribe.data_source import get_data
 from utils.cq_utils import send_group_msg
-from .data_source import wb_sub_config as wb
+from .data_source import get_data, wb_sub_config as wb
+
+__plugin_meta__ = plugin.PluginMetadata(
+    name='微博订阅',
+    description='微博订阅',
+    usage=f"""/查询微博 <微博用户id>  # 查询指定用户最新一条公开微博
+/微博订阅 <微博用户id>  # 订阅指定用户微博
+/微博订阅列表  # 获取当前群组订阅的所有微博用户
+/微博退订 <序号>  # 退订指定序号的微博"""
+)
 
 search_wb = on_command('查询微博', priority=5)
 add_wb_subscribe = on_command('微博订阅', priority=5, permission=SUPERUSER)

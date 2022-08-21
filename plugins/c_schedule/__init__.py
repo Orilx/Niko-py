@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 
-from nonebot import logger, on_command, require
+from nonebot import logger, on_command, require, plugin
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
@@ -11,6 +11,12 @@ from utils.cq_utils import send_group_msg
 from utils.utils import get_diff_days_2_now
 from .data_source import StatusCode, ScheduleManager, ScheduleConfig
 from ..weather import Weather
+
+__plugin_meta__ = plugin.PluginMetadata(
+    name='课程表',
+    description='基于强智 api 实现的课表相关功能',
+    usage=f"""/查课表  # 获取今日课表"""
+)
 
 course_sub = require("nonebot_plugin_apscheduler").scheduler
 

@@ -1,12 +1,16 @@
-from nonebot import on_command
-from nonebot import on_notice
-from nonebot.adapters.onebot.v11 import (GroupMessageEvent, Message,
-                                         MessageSegment)
+from nonebot import on_command, on_notice, plugin
+from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageSegment
 from nonebot.adapters.onebot.v11 import HonorNotifyEvent
 from nonebot.params import CommandArg
 
 from utils.config_util import add_sub_config
 from utils.cq_utils import check_role, get_login_info, set_group_ban
+
+__plugin_meta__ = plugin.PluginMetadata(
+    name='群管插件',
+    description='群组管理相关指令',
+    usage=f"""/mute <@某人>  #  禁言指定群员  *管理员指令"""
+)
 
 mute = on_command("塞口球", aliases={"mute"}, priority=5, block=True)
 
@@ -41,7 +45,7 @@ async def _(event: GroupMessageEvent, args: Message = CommandArg()):
     await mute.finish('操作完成~')
 
 
-member_increase = on_notice(priority=1, block=True)
+# member_increase = on_notice(priority=1, block=True)
 # member_decrease = on_notice(priority=1)
 honor = on_notice(priority=1, block=True)
 

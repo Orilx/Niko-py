@@ -1,8 +1,15 @@
-from nonebot import on_command
+from nonebot import on_command, plugin
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageSegment
 from nonebot.params import CommandArg
-from utils.message_builder import fake_forward_msg
-from utils.utils import send_group_forward_msg
+
+from utils.cq_utils import send_group_forward_msg
+from utils.msg_util import fake_forward_msg
+
+__plugin_meta__ = plugin.PluginMetadata(
+    name='假消息',
+    description='构造一条虚假的转发消息',
+    usage=f'''/fake <@某人> <参数>  # 构造一条虚假的转发消息'''
+)
 
 fake = on_command('fake', aliases={"假消息"}, priority=5, block=True)
 

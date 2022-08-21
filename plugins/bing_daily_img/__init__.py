@@ -1,8 +1,14 @@
-from nonebot import on_command
-from nonebot.params import CommandArg
+from nonebot import on_command, plugin
 from nonebot.adapters.onebot.v11 import Message, MessageSegment
+from nonebot.params import CommandArg
+
 from utils.utils import get_json
 
+__plugin_meta__ = plugin.PluginMetadata(
+    name='bing 每日一图',
+    description='获取 bing 每日一图',
+    usage=f"""/bing  # 获取今天的 bing 每日一图"""
+)
 
 bing_img = on_command("bing", priority=5, block=True)
 
@@ -15,9 +21,9 @@ async def bing_img_(param: Message = CommandArg()):
     js = await get_json("https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1")
     # 遍历列表获得url
     info = ""
-    imgUrl = ""
+    img_url = ""
     for item in js.get("images"):
-        imgUrl = "https://cn.bing.com" + item.get("url")
+        img_url = "https://cn.bing.com" + item.get("url")
         info = item.get("copyright")
 
     # info = info.replace(r"\(([^\)]*)\)","")
@@ -25,7 +31,7 @@ async def bing_img_(param: Message = CommandArg()):
     info = info.split(" ")
     msg = (
             MessageSegment.text("今日图片：")
-            + (MessageSegment.image(imgUrl))
+            + (MessageSegment.image(img_url))
             + f"—— {info[0]}"
     )
     await bing_img.finish(msg)

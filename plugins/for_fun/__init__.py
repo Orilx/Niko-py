@@ -1,9 +1,13 @@
-from nonebot import on_command
+from nonebot import on_command, plugin
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, MessageSegment
 
-"""
-for_fun : 一些实现起来比较简单的指令
-"""
+__plugin_meta__ = plugin.PluginMetadata(
+    name='for_fun',
+    description='一些实现起来比较简单的指令和定时任务',
+    usage=f'''/ping  # pong!
+/来点色图  # 随机返回一张色图'''
+)
+
 ping = on_command('ping', priority=5, block=True)
 setu = on_command('来点色图', aliases={"GKD"}, priority=5, block=True)
 

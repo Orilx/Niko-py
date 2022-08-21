@@ -1,8 +1,5 @@
-import asyncio
-from nonebot import get_driver
-from utils.utils import get_json
-
 from utils.config_util import ConfigManager
+from utils.utils import get_json
 
 data = {
     "api_key": "",

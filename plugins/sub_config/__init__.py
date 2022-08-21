@@ -1,8 +1,18 @@
-from nonebot import on_command
+from nonebot import on_command, plugin
+from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
-from nonebot.adapters.onebot.v11 import Message, GroupMessageEvent
+
 from utils.config_util import SubList
+
+__plugin_meta__ = plugin.PluginMetadata(
+    name='订阅项管理',
+    description='管理注册的订阅项',
+    usage=f"""/订阅 <参数>  # 订阅指定项目
+/退订 <参数>  # 退订指定项目
+/订阅查询  # 查询当前群组订阅的所有项目
+/订阅管理 <参数(可选)>  # 不加参数时查询全局订阅项目状态，添加参数时修改指定项目状态"""
+)
 
 add_subscribe = on_command('订阅', priority=5, permission=SUPERUSER)
 rm_subscribe = on_command('退订', priority=5, permission=SUPERUSER)

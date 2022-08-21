@@ -1,7 +1,15 @@
-from nonebot import on_command
-from nonebot.params import CommandArg
+from nonebot import on_command, plugin
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Message, MessageSegment
+from nonebot.params import CommandArg
+
+
 from .data_source import search_song, get_song_info
+
+__plugin_meta__ = plugin.PluginMetadata(
+    name='点歌',
+    description='点歌',
+    usage=f"""/点歌 <歌名>  # 点歌"""
+)
 
 wyy = on_command("点歌", priority=5, block=True)
 

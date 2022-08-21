@@ -1,8 +1,16 @@
-from nonebot import on_command
-from nonebot.params import CommandArg
+from nonebot import on_command, plugin
 from nonebot.adapters.onebot.v11 import Message
+from nonebot.params import CommandArg
 
 from .data_source import Weather
+
+__plugin_meta__ = plugin.PluginMetadata(
+    name='天气',
+    description='查询天气',
+    usage=f"""/当前天气 <地名>  # 获取当前天气
+/天气 <地名>  # 获取今日天气"""
+)
+
 
 current_weather = on_command('当前天气', priority=5, block=True)
 today_weather = on_command('天气', priority=5, block=True)

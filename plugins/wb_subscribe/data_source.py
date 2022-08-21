@@ -3,6 +3,7 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 from nonebot import get_driver, logger
+
 from utils.config_util import FileManager
 from utils.utils import get_json
 
