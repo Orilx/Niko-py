@@ -4,7 +4,9 @@ from typing import Union
 from nonebot import get_driver, logger
 from ruamel import yaml
 
-super_group = get_driver().config.super_group
+driver = get_driver()
+
+super_group = driver.config.super_group
 
 
 class FileManager:
@@ -157,9 +159,14 @@ class SubList:
     @classmethod
     def add(cls, name: str, sub: SubItem) -> SubItem:
         cls.items[name] = sub
-        logger.info(f"订阅添加: {name}")
         return sub
 
 
 def add_sub_config(name: str, code: str) -> SubItem:
     return SubList.add(name, SubItem(code))
+
+
+@driver.on_startup
+async def info():
+    for k in SubList.items.keys():
+        logger.info(f"订阅添加: {k}")

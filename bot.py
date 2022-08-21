@@ -1,11 +1,44 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import sys
 import nonebot
+from nonebot.plugin import Plugin, PluginMetadata
+from nonebot.log import logger, logger_id, default_format, Filter
 from nonebot.adapters.onebot.v11 import Adapter as ONEBOT_V11Adapter
-from nonebot.log import logger, default_format
+
+logger.remove(logger_id)
+
+
+class CustomFilter(Filter):
+    def __call__(self, record):
+        module_name: str = record["name"]
+
+        module = sys.modules.get(module_name)
+
+        if module:
+            metadata: PluginMetadata = getattr(module, "__plugin_meta__", None)
+            if metadata:
+                record["name"] = metadata.name
+            else:
+                record["name"] = (module_name.split("."))[-1]
+
+        levelno = (
+            logger.level(self.level).no if isinstance(self.level, str) else self.level
+        )
+        return record["level"].no >= levelno
+
+
+logger.add(
+    sys.stdout,
+    level=0,
+    colorize=True,
+    diagnose=False,
+    filter=CustomFilter(),
+    format=default_format,
+)
+
 # Custom your logger
-# 
+#
 
 # logger.add("error.log",
 #            rotation="00:00",
@@ -18,9 +51,7 @@ nonebot.init()
 app = nonebot.get_asgi()
 
 nonebot.init(apscheduler_autostart=True)
-nonebot.init(apscheduler_config={
-    "apscheduler.timezone": "Asia/Shanghai"
-})
+nonebot.init(apscheduler_config={"apscheduler.timezone": "Asia/Shanghai"})
 
 driver = nonebot.get_driver()
 driver.register_adapter(ONEBOT_V11Adapter)
@@ -32,7 +63,7 @@ nonebot.load_builtin_plugins("single_session")
 nonebot.load_from_toml("pyproject.toml")
 
 # Modify some config / config depends on loaded configs
-# 
+#
 # config = driver.config
 # do something...
 
