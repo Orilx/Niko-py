@@ -1,21 +1,34 @@
 [tool.poetry]
 name = "Niko-py"
-version = "0.1.0"
-description = "Niko-py"
-authors = []
+version = "0.1.7"
+description = "基于Nonebot2开发的QQ机器人"
+authors = ["Orilx"]
+license = "AGPLv3"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.7.3"
-nonebot2 = "^2.0.0-beta.1"
+python = "^3.10"
+"ruamel.yaml" = "^0.17.21"
+psutil = "^5.9.1"
+gmqtt = "^0.6.11"
+bs4 = "^0.0.1"
+gino = "^1.0.1"
+slowapi = "^0.1.5"
+pillow = "^9.2.0"
+lxml = "^4.9.1"
 
 [tool.poetry.dev-dependencies]
-nb-cli = "^0.6.0"
+nb-cli = "^0.6.7"
+
+[[tool.poetry.source]]
+name = "tsinghua"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
 
 [tool.nonebot]
-plugins = ["nonebot_plugin_htmlrender"]
+plugins = ["nonebot_plugin_apscheduler", "nonebot_plugin_htmlrender"]
 plugin_dirs = ["plugins"]
 
 [build-system]
-requires = ["poetry_core>=1.0.0"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
