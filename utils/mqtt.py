@@ -3,13 +3,10 @@ from nonebot.log import logger
 from utils.config_util import ConfigManager
 
 data = {
-    "host": "",
-    "port": -1,
-    "client_id": "",
-    "user": "",
-    "password": "",
-    "pub_topic": "",
-    "sub_topic": ""
+    "host": "114.51.41.91",
+    "port": 11451,
+    "user": "user",
+    "password": "password"
 }
 
 conf_data = ConfigManager.register("mqtt", data)

@@ -7,12 +7,9 @@ status = on_command('mc_status')
 players = on_command('players')
 
 data = {
-    "server_url": "",
-    "uuid": "",
-    "remote_uuid": "",
-    "apikey": "",
-    "key": "",
-    "port": ""
+    "server_url": "114.51.41.91",
+    "key": "example.key",
+    "port": 25576
 }
 
 conf = ConfigManager.register("mc_status", data)

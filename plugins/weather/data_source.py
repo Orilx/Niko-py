@@ -2,7 +2,7 @@ from utils.config_util import ConfigManager
 from utils.utils import get_json
 
 data = {
-    "api_key": "",
+    "api_key": "EXAMPLE_KEY",
 }
 conf = ConfigManager.register("qweather", data)
 api_key = conf["api_key"]
