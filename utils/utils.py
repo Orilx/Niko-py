@@ -3,20 +3,29 @@ import time
 from httpx import AsyncClient, ConnectError
 
 
-async def get_json(url: str, params=None, headers=None):
+async def get_data(url: str, params=None, headers=None):
     if params is None:
         params = {}
-    try:
-        async with AsyncClient() as client:
-            if headers:
-                client.headers = headers
-            else:
-                client.headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                                  "Chrome/54.0.2840.99 Safari/537.36"}
-            res = await client.get(url, params=params, timeout=30)
-    except Exception:
-        return None
+
+    async with AsyncClient() as client:
+        if headers:
+            client.headers = headers
+        else:
+            client.headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                              "Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.26"}
+        res = await client.get(url, params=params, timeout=30)
+
+    return res
+
+
+async def get_page(url: str, params=None, headers=None) -> str:
+    res = await get_data(url, params, headers)
+    return res.text
+
+
+async def get_json(url: str, params=None, headers=None):
+    res = await get_data(url, params, headers)
     return res.json()
 
 
