@@ -9,11 +9,11 @@ super_group = get_driver().config.super_group
 
 # check = on_command("check", priority=5, permission=SUPERUSER)
 
-watch = require("nonebot_plugin_apscheduler").scheduler
+# watch = require("nonebot_plugin_apscheduler").scheduler
 
 
 # @check.handle()
-@watch.scheduled_job("cron", minute="*/30", jitter=10)
+# @watch.scheduled_job("cron", minute="*/30", jitter=10)
 async def _():
     g_id = CovidInfoQindao.covid_info.get_groups()
     if not (CovidInfoQindao.covid_info.get_status() and g_id):

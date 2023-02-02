@@ -143,4 +143,6 @@ dmypy.json
 /.idea/
 Dockerfile
 docker-compose.yml
-/poetry.lock
+/.venv/
+/pdm.lock
+/.pdm.toml
